@@ -1,22 +1,36 @@
 import fcntl
-from typing import Union
+import datetime
 
-from fastapi import FastAPI, Query, Cookie, Response
+from fastapi import FastAPI, Path
 
 
 def count(increment=None):
-    with open('count.cnt', 'r') as c:
+    with open("count.cnt", "r") as c:
         cnt = int(c.read())
     if type(increment) is int:
-        with open('count.cnt', 'w+') as c:
+        with open("count.cnt", "w+") as c:
             fcntl.flock(c, fcntl.LOCK_EX)
             c.write(str(cnt + 1))
             fcntl.flock(c, fcntl.LOCK_UN)
     return cnt
 
+
+def history(new_string=None):
+    if new_string:
+        with open("history.txt", "a") as h:
+            fcntl.flock(h, fcntl.LOCK_EX)
+            h.write(f"{new_string}\n")
+            fcntl.flock(h, fcntl.LOCK_UN)
+    with open("history.txt", "r") as h:
+        history = h.readlines()
+
+    return history
+
+
 def log(msg):
-  with open('log.log', 'a') as l:
-    l.write(str(msg) + "\n")
+    with open("log.log", "a") as l:
+        l.write(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
+
 
 log("Starting T-Tweak")
 
@@ -24,83 +38,257 @@ app = FastAPI()
 
 log("T-Tweak Started")
 
+
 @app.get("/")
-def read_root():
-    log("read_root called")
-    count(1)
+def root():
+    """Provides status of the t-tweak service.
+
+    Return Type: str"""
+    log("root")
+
     return {"Status": "Operational"}
 
-@app.get("/reverse/{string}")
-def reverse(string: str):
-    """ Reverses a string."""
-    log(f"reverse called with: {string}")
-    count(1)
-    return {"res": string[::-1]}
 
-@app.get("/upper/{string}")
-def upper(string: str):
-    log(f"upper called with: {string}")
-    count(1)
-    return {"res": string.upper()}
+@app.get("/count/all")
+def count_all():
+    """Provides the total count of text tweaks serviced by t-tweak.
 
-@app.get("/lenght/{string}")
-def lenght(string: str):
-    log(f"lenght called with: {string}")
-    count(1)
-    return {"res": str(len(string))}
+    Return Type: int
+    """
+    log(f"count all")
 
-@app.get("/substrings/{string}")
-def substring(string:str, sub: str):
-    log(f"substring called with: {string}, {sub}")
+    return {"res": count()}
+
+
+@app.get("/history")
+def get_history():
+    """Retrieves the entire history of text tweaks serviced by t-tweak.
+
+    Return Type: str
+    """
+    log("get_history")
+    return history()
+
+
+@app.get("/length/{text}")
+def length(text: str = Path(..., description="Text to be measured")):
+    """Calculates the length of a text provided.
+
+    Return Type: int
+    """
+    log(f"length {text}")
+    count(1)
+    history(f"length {text}")
+
+    return {"res": str(len(text))}
+
+
+@app.get("/reverse/{text}")
+def reverse(text: str = Path(..., description="Text to be reversed")):
+    """Reverses the text provided.
+
+    Return Type: str
+    """
+    log(f"reverse {text}")
+    count(1)
+    history(f"reverse {text}")
+
+    return {"res": text[::-1]}
+
+
+@app.get("/upper/{text}")
+def upper(text: str = Path(..., description="Text to convert to upper case")):
+    """Converts a text to all-uppercase.
+
+    Non-alphabetic characters are left untouched.
+
+    Return Type: str
+    """
+    log(f"upper {text}")
+    count(1)
+    history(f"upper {text}")
+
+    return {"res": text.upper()}
+
+
+@app.get("/lower/{text}")
+def lower(text: str = Path(..., description="Text to convert to lower case")):
+    """Converts a text to all lowercase.
+
+    Non-alphabetic characters are left untouched.
+
+    Return Type: str
+    """
+    log(f"lower {text}")
+    count(1)
+    history(f"lower {text}")
+
+    return {"res": text.lower()}
+
+
+@app.get("/mix_case/{text}")
+def mix_case(text: str = Path(..., description="Text to alternate cases")):
+    """Text will have the case of its letters alternate between lower and upper case.
+
+    Non-alphabetic characters are left untouched.
+
+    Return Type: str
+    """
+    log(f"mix_case {text}")
+    count(1)
+    history(f"mix_case {text}")
+
+    res = "".join([l.upper() if i % 2 else l.lower() for i, l in enumerate(text)])
+
+    return {"res": res}
+
+
+@app.get("/substrings/{string}/{sub}")
+def substring(
+    string: str = Path(
+        ..., description="Larger string to serve as source for the search"
+    ),
+    sub: str = Path(..., description="Substring to find within string"),
+):
+    """Finds substrings inside a string.
+
+    Returns the locations of the substrings within said string (index starts at 0).
+
+    Return Type: list[int]
+    """
+    log(f"substring {string}, {sub}")
+    count(1)
+    history(f"substring {string}, {sub}")
+
     here = 0
     res = []
-    while(True):
+    while True:
         here = string.find(sub, here)
         if here == -1:
             break
         res.append(here)
         here += 1
 
-    return {"res": str(res)}
+    return {"res": res}
 
-@app.get("/password_strenght/{password}")
-def password(password: str):
-# A password should be larger than 12
-# A password should include a combination of letters, numbers, and special characters.
-# A password shouldn’t contain any consecutive letters or numbers.
-# A password shouldn’t be the words “password”, "admin" or "root"
-# A password shouldn’t be the same letter or number repeated
+
+@app.get("/password/{password}")
+def password_strength(
+    password: str = Path(
+        ...,
+        description="Your password. *Do not use a real one*, it gets logged and is publicly visible.",
+    )
+):
+    """A strenght score for passwords between 0 and 10. Is your password strong enough?.
+
+    0 is a weak password, 10 is a strong password.
+
+    Rules:
+    * A password should be longer than 12 characters. Score is reduced by the distance from the actual length and 12.
+    * A password should include at least one upper case letter, one lower case letter, and one number. Score is reduced by 2 for every infraction.
+    * A password shouldn't contain any consecutive letters or numbers. 1 is deducted from score for every infraction.
+    * A password shouldn't be the words “password”, "admin" or "root". Violating this rule results in a score of 0.
+    * A password shouldn't be the same letter or number repeated for its entire length. This deducts 7 points.
+
+    Return Type: int
+    """
+
+    count(1)
+    history(f"password {password}")
 
     score = 10
-    score = len(password) - 2
 
-    if not (sorted([ord(i) for i in password if 65 <= ord(i) <= 90])):
-        score -= 2
-    if not (sorted([ord(i) for i in password if 97 <= ord(i) <= 122])):
-        score -= 2
-    if not (sorted([ord(i) for i in password if 48 <= ord(i) <= 57])):
-        score -= 2
+    # # A password should be larger than 12
+    # score = len(password) - 2
 
-    for i, l in enumerate(password):
-        print(len(password), i, l)
-        if i + 1 < len(password):
-            print(l, password[i+1])
-            if ord(l) + 1 == ord(password[i+1]):
-                score -= 1
-                print(score)
-    if password in ["password", "admin", "root"]:
-        score -= 7
-    if len(set(password)) <= 1:
-        score -= 2
+    # # A password should include upper case letter(s), lower case letter(s), and number(s).
+    # if not [ord(i) for i in password if 65 <= ord(i) <= 90]:
+    #     score -= 2
+    # if not [ord(i) for i in password if 97 <= ord(i) <= 122]:
+    #     score -= 2
+    # if not [ord(i) for i in password if 48 <= ord(i) <= 57]:
+    #     score -= 2
 
-    return min(max(score, 0), 10)
+    # # A password shouldn’t contain any consecutive letters or numbers.
+    # for i, l in enumerate(password):
+    #     # BUG: this will reduce score for consecutive ordinal values that cross char groups
+    #     if i + 1 < len(password):
+    #         if ord(l) + 1 == ord(password[i + 1]):
+    #             score -= 1
+
+    # # A password shouldn’t be the words “password”, "admin" or "root"
+    # if password in ["password", "admin", "root"]:
+    #     score = 0
+
+    # # A password shouldn’t be the same letter or number repeated
+    # if len(set(password)) <= 1:
+    #     score -= 7
+
+    # log(f"password {password} {score}")
+
+    return {"res": min(max(score, 0), 10)}
 
 
+@app.get("/counterstring/{length}/{char}")
+def counterstring(
+    length: int = Path(..., description="Size of the desired counterstring"),
+    char: str = Path(
+        ..., description="Character to use as the counterstring measure mark"
+    ),
+):
+    """Generates a counterstring, a string that measures itself, and helps you measure software.
 
-@app.get("/count/all")
-def count_all():
-    log(f"count all called")
-    return {"res": str(count())}
+    Learn more about counterstrings here: https://www.satisfice.com/blog/archives/22
+
+    Return Type: str
+    """
+    log(f"counterstring {length} {char}")
+    count(1)
+    history(f"counterstring {length} {char}")
+
+    # A discussion on counterstring algorithms is available at https://www.eviltester.com/2018/05/counterstring-algorithms.html
+    # This implementation is copied from https://github.com/deefex/pyclip/blob/master/pyclip/counterstring.py
+    counterstring = ""
+
+    while length > 0:
+        next_count = char + str(length)[::-1]
+        if len(next_count) > length:
+            next_count = next_count[:length]
+        counterstring = counterstring + next_count
+        length -= len(next_count)
+
+    counterstring = counterstring[::-1]
+
+    return {"res": counterstring}
+
+
+@app.get("/anagrams/{text}")
+def anagrams(text: str = Path(..., description="Text to find anagrams for. Fun!")):
+    """Finds anagrams for the text provided.
+
+    If more than one anagram is found, all of the anagrams are returned within a list.
+
+    Return Type: Union[list[str], str, NoneType]
+    """
+    log(f"anagrams {text}")
+    count(1)
+    history(f"anagrams {text}")
+
+    import words
+
+    all_words = words.words.copy()
+
+    key = "".join(sorted(text))
+    anagrams = all_words.get(key, [None]).copy()
+
+    if text in anagrams:
+        anagrams.remove(text)
+
+    # Extract element if list contains only it, None if list is empty, list otherwise
+    res = anagrams if len(anagrams) > 1 else None if len(anagrams) == 0 else anagrams[0]
+
+    return {"res": res}
+
 
 # @app.get("/count/mine")
 # def count_mine(session_count: Union[str, None] = Cookie(default=0)):
@@ -109,13 +297,5 @@ def count_all():
 #     return {"res": str(session_count)}
 
 
-
-# print(
-#     read_root(),
-#     reverse('1234'),
-#     upper('1234'),
-#     lenght('1234'),
-#     count_all(),
-#     substring('12323232', '232'),
-#     count_mine(),
-# )
+if __name__ == "__main__":
+    pass
