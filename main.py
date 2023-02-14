@@ -319,6 +319,7 @@ def anagrams(
 
     all_words = words.words.copy()
 
+    text = text.lower()
     key = "".join(sorted(text))
     anagrams = all_words.get(key, [None]).copy()
 
