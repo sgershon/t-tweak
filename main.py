@@ -2,6 +2,7 @@ import fcntl
 import datetime
 
 from fastapi import FastAPI, Path
+from fastapi.responses import Response, JSONResponse
 
 
 def count(increment=None):
@@ -59,7 +60,16 @@ def root():
     Return Type: str"""
     log("root")
 
-    return {"Status": "Operational"}
+    return JSONResponse(content={"Status": "Operational"})
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots():
+    """Returns the robots.txt file."""
+    robs = """User-agent: *
+Disallow: /
+"""
+    return Response(content=robs, media_type="text/plain")
 
 
 @app.get("/count/all")
@@ -70,7 +80,7 @@ def count_all():
     """
     log(f"count all")
 
-    return {"res": count()}
+    return JSONResponse(content={"res": count()})
 
 
 @app.get("/history")
@@ -80,7 +90,7 @@ def get_history():
     Return Type: str
     """
     log("get_history")
-    return history()
+    return JSONResponse(content=history())
 
 
 @app.get("/length/{text}")
@@ -91,7 +101,7 @@ def length(text: str = Path(..., description="Text to be measured", max_length=1
     """
     log_count_history(l=True, h=True, c=True, msg=f"length {text}", inc=1)
 
-    return {"res": str(len(text))}
+    return JSONResponse(content={"res": str(len(text))})
 
 
 @app.get("/reverse/{text}")
@@ -102,11 +112,13 @@ def reverse(text: str = Path(..., description="Text to be reversed", max_length=
     """
     log_count_history(l=True, h=True, c=True, msg=f"reverse {text}", inc=1)
 
-    return {"res": text[::-1]}
+    return JSONResponse(content={"res": text[::-1]})
 
 
 @app.get("/upper/{text}")
-def upper(text: str = Path(..., description="Text to convert to upper case", max_length=100)):
+def upper(
+    text: str = Path(..., description="Text to convert to upper case", max_length=100)
+):
     """Converts a text to all-uppercase.
 
     Non-alphabetic characters are left untouched.
@@ -115,11 +127,13 @@ def upper(text: str = Path(..., description="Text to convert to upper case", max
     """
     log_count_history(l=True, h=True, c=True, msg=f"upper {text}", inc=1)
 
-    return {"res": text.upper()}
+    return JSONResponse(content={"res": text.upper()})
 
 
 @app.get("/lower/{text}")
-def lower(text: str = Path(..., description="Text to convert to lower case", max_length=100)):
+def lower(
+    text: str = Path(..., description="Text to convert to lower case", max_length=100)
+):
     """Converts a text to all lowercase.
 
     Non-alphabetic characters are left untouched.
@@ -128,11 +142,13 @@ def lower(text: str = Path(..., description="Text to convert to lower case", max
     """
     log_count_history(l=True, h=True, c=True, msg=f"lower {text}", inc=1)
 
-    return {"res": text.lower()}
+    return JSONResponse(content={"res": text.lower()})
 
 
 @app.get("/mix_case/{text}")
-def mix_case(text: str = Path(..., description="Text to alternate cases", max_length=100)):
+def mix_case(
+    text: str = Path(..., description="Text to alternate cases", max_length=100)
+):
     """Text will have the case of its letters alternate between lower and upper case.
 
     Non-alphabetic characters are left untouched.
@@ -143,15 +159,18 @@ def mix_case(text: str = Path(..., description="Text to alternate cases", max_le
 
     res = "".join([l.upper() if i % 2 else l.lower() for i, l in enumerate(text)])
 
-    return {"res": res}
+    return JSONResponse(content={"res": res})
 
 
 @app.get("/substrings/{string}/{sub}")
 def substring(
     string: str = Path(
-        ..., description="Larger string to serve as source for the search", max_length=100
+        ...,
+        description="Larger string to serve as source for the search",
+        max_length=100,
     ),
-    sub: str = Path(..., description="Substring to find within string"), max_length=100
+    sub: str = Path(..., description="Substring to find within string"),
+    max_length=100,
 ):
     """Finds substrings inside a string.
 
@@ -159,9 +178,7 @@ def substring(
 
     Return Type: list[int]
     """
-    log_count_history(
-        l=True, h=True, c=True, msg=f"substring {string}, {sub}", inc=1
-    )
+    log_count_history(l=True, h=True, c=True, msg=f"substring {string}, {sub}", inc=1)
 
     here = 0
     res = []
@@ -172,14 +189,15 @@ def substring(
         res.append(here)
         here += 1
 
-    return {"res": res}
+    return JSONResponse(content={"res": res})
 
 
 @app.get("/password/{password}")
 def password_strength(
     password: str = Path(
         ...,
-        description="Your password. *Do not use a real one*, it gets logged and is publicly visible.", max_length=100
+        description="Your password. *Do not use a real one*, it gets logged and is publicly visible.",
+        max_length=100,
     )
 ):
     """A strenght score for passwords between 0 and 10. Is your password strong enough?.
@@ -195,9 +213,7 @@ def password_strength(
 
     Return Type: int
     """
-    log_count_history(
-        l=False, h=True, c=True, msg=f"password {password}", inc=1
-    )
+    log_count_history(l=False, h=True, c=True, msg=f"password {password}", inc=1)
 
     score = 10
 
@@ -229,14 +245,18 @@ def password_strength(
 
     log(f"password {password} {score}")
 
-    return {"res": min(max(score, 0), 10)}
+    return JSONResponse(content={"res": min(max(score, 0), 10)})
 
 
 @app.get("/counterstring/{length}/{char}")
 def counterstring(
-    length: int = Path(..., description="Size of the desired counterstring", gt=0, le=150),
+    length: int = Path(
+        ..., description="Size of the desired counterstring", gt=0, le=150
+    ),
     char: str = Path(
-        ..., description="Character to use as the counterstring measure mark", max_length=100
+        ...,
+        description="Character to use as the counterstring measure mark",
+        max_length=100,
     ),
 ):
     """Generates a counterstring, a string that measures itself, and helps you measure software.
@@ -262,11 +282,13 @@ def counterstring(
 
     counterstring = counterstring[::-1]
 
-    return {"res": counterstring}
+    return JSONResponse(content={"res": counterstring})
 
 
 @app.get("/anagrams/{text}")
-def anagrams(text: str = Path(..., description="Text to find anagrams for. Fun!", max_length=100)):
+def anagrams(
+    text: str = Path(..., description="Text to find anagrams for. Fun!", max_length=100)
+):
     """Finds anagrams for the text provided.
 
     If more than one anagram is found, all of the anagrams are returned within a list.
@@ -288,7 +310,7 @@ def anagrams(text: str = Path(..., description="Text to find anagrams for. Fun!"
     # Extract element if list contains only it, None if list is empty, list otherwise
     res = anagrams if len(anagrams) > 1 else None if len(anagrams) == 0 else anagrams[0]
 
-    return {"res": res}
+    return JSONResponse(content={"res": res})
 
 
 # @app.get("/count/mine")
