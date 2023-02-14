@@ -180,23 +180,23 @@ def mix_case(
     return JSONResponse(content={"res": res})
 
 
-@app.get("/substrings/{string}/{sub}")
-def substring(
+@app.get("/finds/{string}/{sub}")
+def find(
     string: str = Path(
         ...,
         description="Larger string to serve as source for the search",
         max_length=100,
     ),
-    sub: str = Path(..., description="Substring to find within string"),
+    sub: str = Path(..., description="Smaller string to find within the larger string"),
     max_length=100,
 ):
-    """Finds substrings inside a string.
+    """Finds strings inside strings.
 
     Returns the locations of the substrings within said string (index starts at 0).
 
     Return Type: list[int]
     """
-    log_count_history(l=True, h=True, c=True, msg=f"substring {string}, {sub}", inc=1)
+    log_count_history(l=True, h=True, c=True, msg=f"find {string}, {sub}", inc=1)
 
     here = 0
     res = []
