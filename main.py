@@ -180,7 +180,7 @@ def mix_case(
     return JSONResponse(content={"res": res})
 
 
-@app.get("/finds/{string}/{sub}")
+@app.get("/find/{string}/{sub}")
 def find(
     string: str = Path(
         ...,
