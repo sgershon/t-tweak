@@ -32,6 +32,18 @@ def log(msg):
         l.write(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
 
 
+def log_count_history(l=True, h=True, c=True, **kwargs):
+    msg = kwargs.get("msg", None)
+    if msg:
+        if l:
+            log(msg)
+        if h:
+            history(msg)
+    inc = kwargs.get("inc", None)
+    if c:
+        count(inc)
+
+
 log("Starting T-Tweak")
 
 app = FastAPI()
@@ -76,9 +88,7 @@ def length(text: str = Path(..., description="Text to be measured")):
 
     Return Type: int
     """
-    log(f"length {text}")
-    count(1)
-    history(f"length {text}")
+    log_count_history(l=True, h=True, c=True, msg=f"length {text}", inc=1)
 
     return {"res": str(len(text))}
 
@@ -89,9 +99,7 @@ def reverse(text: str = Path(..., description="Text to be reversed")):
 
     Return Type: str
     """
-    log(f"reverse {text}")
-    count(1)
-    history(f"reverse {text}")
+    log_count_history(l=True, h=True, c=True, msg=f"reverse {text}", inc=1)
 
     return {"res": text[::-1]}
 
@@ -104,9 +112,7 @@ def upper(text: str = Path(..., description="Text to convert to upper case")):
 
     Return Type: str
     """
-    log(f"upper {text}")
-    count(1)
-    history(f"upper {text}")
+    log_count_history(l=True, h=True, c=True, msg=f"upper {text}", inc=1)
 
     return {"res": text.upper()}
 
@@ -119,9 +125,7 @@ def lower(text: str = Path(..., description="Text to convert to lower case")):
 
     Return Type: str
     """
-    log(f"lower {text}")
-    count(1)
-    history(f"lower {text}")
+    log_count_history(l=True, h=True, c=True, msg=f"lower {text}", inc=1)
 
     return {"res": text.lower()}
 
@@ -134,9 +138,7 @@ def mix_case(text: str = Path(..., description="Text to alternate cases")):
 
     Return Type: str
     """
-    log(f"mix_case {text}")
-    count(1)
-    history(f"mix_case {text}")
+    log_count_history(l=True, h=True, c=True, msg=f"mix_case {text}", inc=1)
 
     res = "".join([l.upper() if i % 2 else l.lower() for i, l in enumerate(text)])
 
@@ -156,9 +158,9 @@ def substring(
 
     Return Type: list[int]
     """
-    log(f"substring {string}, {sub}")
-    count(1)
-    history(f"substring {string}, {sub}")
+    log_count_history(
+        l=True, h=True, c=True, msg=f"substring {string}, {sub}", inc=1
+    )
 
     here = 0
     res = []
@@ -192,39 +194,39 @@ def password_strength(
 
     Return Type: int
     """
-
-    count(1)
-    history(f"password {password}")
+    log_count_history(
+        l=False, h=True, c=True, msg=f"password {password}", inc=1
+    )
 
     score = 10
 
-    # # A password should be larger than 12
-    # score = len(password) - 2
+    # A password should be larger than 12
+    score = len(password) - 2
 
-    # # A password should include upper case letter(s), lower case letter(s), and number(s).
-    # if not [ord(i) for i in password if 65 <= ord(i) <= 90]:
-    #     score -= 2
-    # if not [ord(i) for i in password if 97 <= ord(i) <= 122]:
-    #     score -= 2
-    # if not [ord(i) for i in password if 48 <= ord(i) <= 57]:
-    #     score -= 2
+    # A password should include upper case letter(s), lower case letter(s), and number(s).
+    if not [ord(i) for i in password if 65 <= ord(i) <= 90]:
+        score -= 2
+    if not [ord(i) for i in password if 97 <= ord(i) <= 122]:
+        score -= 2
+    if not [ord(i) for i in password if 48 <= ord(i) <= 57]:
+        score -= 2
 
-    # # A password shouldn’t contain any consecutive letters or numbers.
-    # for i, l in enumerate(password):
-    #     # BUG: this will reduce score for consecutive ordinal values that cross char groups
-    #     if i + 1 < len(password):
-    #         if ord(l) + 1 == ord(password[i + 1]):
-    #             score -= 1
+    # A password shouldn’t contain any consecutive letters or numbers.
+    for i, l in enumerate(password):
+        # BUG: this will reduce score for consecutive ordinal values that cross char groups
+        if i + 1 < len(password):
+            if ord(l) + 1 == ord(password[i + 1]):
+                score -= 1
 
-    # # A password shouldn’t be the words “password”, "admin" or "root"
-    # if password in ["password", "admin", "root"]:
-    #     score = 0
+    # A password shouldn’t be the words “password”, "admin" or "root"
+    if password in ["password", "admin", "root"]:
+        score = 0
 
-    # # A password shouldn’t be the same letter or number repeated
-    # if len(set(password)) <= 1:
-    #     score -= 7
+    # A password shouldn’t be the same letter or number repeated
+    if len(set(password)) <= 1:
+        score -= 7
 
-    # log(f"password {password} {score}")
+    log(f"password {password} {score}")
 
     return {"res": min(max(score, 0), 10)}
 
@@ -242,9 +244,9 @@ def counterstring(
 
     Return Type: str
     """
-    log(f"counterstring {length} {char}")
-    count(1)
-    history(f"counterstring {length} {char}")
+    log_count_history(
+        l=True, h=True, c=True, msg=f"counterstring {length} {char}", inc=1
+    )
 
     # A discussion on counterstring algorithms is available at https://www.eviltester.com/2018/05/counterstring-algorithms.html
     # This implementation is copied from https://github.com/deefex/pyclip/blob/master/pyclip/counterstring.py
@@ -270,9 +272,7 @@ def anagrams(text: str = Path(..., description="Text to find anagrams for. Fun!"
 
     Return Type: Union[list[str], str, NoneType]
     """
-    log(f"anagrams {text}")
-    count(1)
-    history(f"anagrams {text}")
+    log_count_history(l=True, h=True, c=True, msg=f"anagrams {text}", inc=1)
 
     import words
 
