@@ -2,7 +2,7 @@ import fcntl
 import datetime
 
 from fastapi import FastAPI, Path
-from fastapi.responses import Response, JSONResponse
+from fastapi.responses import Response, JSONResponse, FileResponse
 
 
 def count(increment=None):
@@ -70,6 +70,10 @@ def robots():
 Disallow: /
 """
     return Response(content=robs, media_type="text/plain")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("favicon.ico")
 
 
 @app.get("/count/all")
