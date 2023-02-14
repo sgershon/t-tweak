@@ -30,8 +30,15 @@ def history(new_string=None):
 
 
 def log(msg):
-    with open("log.log", "a") as l:
-        l.write(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
+    with open("log.log", "r") as l:
+        items = l.readlines()
+    if msg:
+        items.append(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
+        with open("log.log", "w") as l:
+            fcntl.flock(l, fcntl.LOCK_EX)
+            l.writelines(items[-250:])
+            fcntl.flock(l, fcntl.LOCK_UN)
+
 
 
 def log_count_history(l=True, h=True, c=True, **kwargs):
