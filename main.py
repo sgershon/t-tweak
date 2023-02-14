@@ -48,7 +48,20 @@ def log_count_history(l=True, h=True, c=True, **kwargs):
 
 log("Starting T-Tweak")
 
-app = FastAPI()
+
+description = """
+T-Tweak helps you tweak text! 🖉
+
+### All functions log their usage, so don't write anything secret!
+"""
+app = FastAPI(
+    title="T-Tweak API",
+    description=description,
+    version="0.0.1",
+    contact={
+        "name": "67778 Course",
+    },
+)
 
 log("T-Tweak Started")
 
@@ -70,6 +83,7 @@ def robots():
 Disallow: /
 """
     return Response(content=robs, media_type="text/plain")
+
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
