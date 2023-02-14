@@ -187,8 +187,11 @@ def find(
         description="Larger string to serve as source for the search",
         max_length=100,
     ),
-    sub: str = Path(..., description="Smaller string to find within the larger string"),
-    max_length=100,
+    sub: str = Path(
+        ...,
+        description="Smaller string to find within the larger string",
+        max_length=100,
+    ),
 ):
     """Finds strings inside strings.
 
@@ -208,6 +211,29 @@ def find(
         here += 1
 
     return JSONResponse(content={"res": res})
+
+
+@app.get("/substring/{string}/{start}/{end}")
+def substring(
+    string: str = Path(
+        ...,
+        description="A string to extract a slice from.",
+        max_length=100,
+    ),
+    start: int = Path(..., description="Where to start the extraction", ge=0, le=100),
+    end: int = Path(..., description="Where to end the extraction", ge=0, le=100),
+):
+    """Extracts a substring from a larger string.
+
+    Returns the resultign string based on the start and end positions (index starts at 0).
+
+    Return Type: str
+    """
+    log_count_history(
+        l=True, h=True, c=True, msg=f"substring {string}, {start}:{end}", inc=1
+    )
+
+    return JSONResponse(content={"res": string[start:end]})
 
 
 @app.get("/password/{password}")
@@ -269,7 +295,7 @@ def password_strength(
 @app.get("/counterstring/{length}/{char}")
 def counterstring(
     length: int = Path(
-        ..., description="Size of the desired counterstring", gt=0, le=150
+        ..., description="Size of the desired counterstring", ge=0, le=150
     ),
     char: str = Path(
         ...,
