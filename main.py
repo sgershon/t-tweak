@@ -16,15 +16,16 @@ def count(increment=None):
 
 
 def history(new_string=None):
-    if new_string:
-        with open("history.txt", "a") as h:
-            fcntl.flock(h, fcntl.LOCK_EX)
-            h.write(f"{new_string}\n")
-            fcntl.flock(h, fcntl.LOCK_UN)
     with open("history.txt", "r") as h:
-        history = h.readlines()
+        hist = h.readlines()
+    if new_string:
+        hist.append(f"{new_string}\n")
+        with open("history.txt", "w") as h:
+            fcntl.flock(h, fcntl.LOCK_EX)
+            h.writelines(hist[-50:])
+            fcntl.flock(h, fcntl.LOCK_UN)
 
-    return history
+    return hist
 
 
 def log(msg):
@@ -83,7 +84,7 @@ def get_history():
 
 
 @app.get("/length/{text}")
-def length(text: str = Path(..., description="Text to be measured")):
+def length(text: str = Path(..., description="Text to be measured", max_length=100)):
     """Calculates the length of a text provided.
 
     Return Type: int
@@ -94,7 +95,7 @@ def length(text: str = Path(..., description="Text to be measured")):
 
 
 @app.get("/reverse/{text}")
-def reverse(text: str = Path(..., description="Text to be reversed")):
+def reverse(text: str = Path(..., description="Text to be reversed", max_length=100)):
     """Reverses the text provided.
 
     Return Type: str
@@ -105,7 +106,7 @@ def reverse(text: str = Path(..., description="Text to be reversed")):
 
 
 @app.get("/upper/{text}")
-def upper(text: str = Path(..., description="Text to convert to upper case")):
+def upper(text: str = Path(..., description="Text to convert to upper case", max_length=100)):
     """Converts a text to all-uppercase.
 
     Non-alphabetic characters are left untouched.
@@ -118,7 +119,7 @@ def upper(text: str = Path(..., description="Text to convert to upper case")):
 
 
 @app.get("/lower/{text}")
-def lower(text: str = Path(..., description="Text to convert to lower case")):
+def lower(text: str = Path(..., description="Text to convert to lower case", max_length=100)):
     """Converts a text to all lowercase.
 
     Non-alphabetic characters are left untouched.
@@ -131,7 +132,7 @@ def lower(text: str = Path(..., description="Text to convert to lower case")):
 
 
 @app.get("/mix_case/{text}")
-def mix_case(text: str = Path(..., description="Text to alternate cases")):
+def mix_case(text: str = Path(..., description="Text to alternate cases", max_length=100)):
     """Text will have the case of its letters alternate between lower and upper case.
 
     Non-alphabetic characters are left untouched.
@@ -148,9 +149,9 @@ def mix_case(text: str = Path(..., description="Text to alternate cases")):
 @app.get("/substrings/{string}/{sub}")
 def substring(
     string: str = Path(
-        ..., description="Larger string to serve as source for the search"
+        ..., description="Larger string to serve as source for the search", max_length=100
     ),
-    sub: str = Path(..., description="Substring to find within string"),
+    sub: str = Path(..., description="Substring to find within string"), max_length=100
 ):
     """Finds substrings inside a string.
 
@@ -178,7 +179,7 @@ def substring(
 def password_strength(
     password: str = Path(
         ...,
-        description="Your password. *Do not use a real one*, it gets logged and is publicly visible.",
+        description="Your password. *Do not use a real one*, it gets logged and is publicly visible.", max_length=100
     )
 ):
     """A strenght score for passwords between 0 and 10. Is your password strong enough?.
@@ -233,9 +234,9 @@ def password_strength(
 
 @app.get("/counterstring/{length}/{char}")
 def counterstring(
-    length: int = Path(..., description="Size of the desired counterstring"),
+    length: int = Path(..., description="Size of the desired counterstring", gt=0, le=150),
     char: str = Path(
-        ..., description="Character to use as the counterstring measure mark"
+        ..., description="Character to use as the counterstring measure mark", max_length=100
     ),
 ):
     """Generates a counterstring, a string that measures itself, and helps you measure software.
@@ -265,7 +266,7 @@ def counterstring(
 
 
 @app.get("/anagrams/{text}")
-def anagrams(text: str = Path(..., description="Text to find anagrams for. Fun!")):
+def anagrams(text: str = Path(..., description="Text to find anagrams for. Fun!", max_length=100)):
     """Finds anagrams for the text provided.
 
     If more than one anagram is found, all of the anagrams are returned within a list.
