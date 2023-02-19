@@ -1,7 +1,9 @@
 import fcntl
+import string
+import random
 import datetime
 
-from fastapi import FastAPI, Path
+from fastapi import FastAPI, Path, Query
 from fastapi.responses import Response, JSONResponse, FileResponse
 
 
@@ -38,7 +40,6 @@ def log(msg):
             fcntl.flock(l, fcntl.LOCK_EX)
             l.writelines(items[-250:])
             fcntl.flock(l, fcntl.LOCK_UN)
-
 
 
 def log_count_history(l=True, h=True, c=True, **kwargs):
@@ -334,6 +335,50 @@ def counterstring(
     counterstring = counterstring[::-1]
 
     return JSONResponse(content={"res": counterstring})
+
+
+@app.get("/random")
+def rand_str(
+    length: int = Query(
+        ..., description="Size of the desired random string", ge=0, le=150
+    )
+):
+    """Generates a random string of desired size.
+
+    Return Type: str
+    """
+
+    random_string = "".join(
+        random.choices(string.ascii_letters + string.digits, k=length)
+    )
+    print("random", random_string)
+
+    with open("random.txt", "r") as r:
+        rnd = r.read()
+
+    prefix = []
+    for letter in rnd:
+        ordinal = ord(letter) + 1
+        if ord(letter) == 122:
+            ordinal = 97
+        if ord(letter) == 90:
+            ordinal = 65
+        if ord(letter) == 57:
+            ordinal = 48
+        prefix.append(chr(ordinal))
+       
+    prefix = "".join(prefix)[:length]
+    print("prefix", prefix)
+
+    final_random = prefix + random_string[len(rnd) :]
+    print("final", final_random)
+
+    with open("random.txt", "w+") as r:
+        fcntl.flock(r, fcntl.LOCK_EX)
+        r.write(final_random)
+        fcntl.flock(r, fcntl.LOCK_UN)
+
+    return JSONResponse(content={"res": final_random})
 
 
 @app.get("/anagrams/{text}")
