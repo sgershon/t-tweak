@@ -99,18 +99,18 @@ async def favicon():
 
 @app.get("/count/all")
 def count_all():
-    """Provides the total count of text tweaks serviced by t-tweak.
+    """Provides the count of text tweaks serviced by t-tweak.
 
     Return Type: int
     """
-    log(f"count all")
+    log(f"Count All")
 
     return JSONResponse(content={"res": count()})
 
 
 @app.get("/history")
 def get_history():
-    """Retrieves the entire history of text tweaks serviced by t-tweak.
+    """The history of text tweaks serviced by t-tweak is returned by this function.
 
     Return Type: str
     """
@@ -118,8 +118,8 @@ def get_history():
     return JSONResponse(content=history())
 
 
-@app.get("/length/{text}")
-def length(text: str = Path(..., description="Text to be measured", max_length=100)):
+@app.get("/get_length/{text}")
+def get_length(text: str = Path(..., description="Text to be measured", max_length=100)):
     """Calculates the length of a text provided.
 
     Return Type: int
@@ -131,7 +131,7 @@ def length(text: str = Path(..., description="Text to be measured", max_length=1
 
 @app.get("/reverse/{text}")
 def reverse(text: str = Path(..., description="Text to be reversed", max_length=100)):
-    """Reverses the text provided.
+    """Calculates the length of a text provided. 
 
     Return Type: str
     """
@@ -142,11 +142,9 @@ def reverse(text: str = Path(..., description="Text to be reversed", max_length=
 
 @app.get("/upper/{text}")
 def upper(
-    text: str = Path(..., description="Text to convert to upper case", max_length=100)
+    text: str = Path(..., description="Text to convert to upper case")
 ):
     """Converts a text to all-uppercase.
-
-    Non-alphabetic characters are left untouched.
 
     Return Type: str
     """
@@ -155,15 +153,13 @@ def upper(
     return JSONResponse(content={"res": text.upper()})
 
 
-@app.get("/lower/{text}")
-def lower(
+@app.get("/tolower/{text}")
+def tolower(
     text: str = Path(..., description="Text to convert to lower case", max_length=100)
 ):
     """Converts a text to all lowercase.
 
-    Non-alphabetic characters are left untouched.
-
-    Return Type: str
+    Return Type: int
     """
     log_count_history(l=True, h=True, c=True, msg=f"lower {text}", inc=1)
 
@@ -191,18 +187,18 @@ def mix_case(
 def find(
     string: str = Path(
         ...,
-        description="Larger string to serve as source for the search",
-        max_length=100,
+        description="String A",
+        max_length=8,
     ),
     sub: str = Path(
         ...,
-        description="Smaller string to find within the larger string",
-        max_length=100,
+        description="String B",
+        max_length=10,
     ),
 ):
     """Finds strings inside strings.
 
-    Returns the locations of the substrings within said string (index starts at 0).
+    Returns the locations of one string within the other
 
     Return Type: list[int]
     """
@@ -227,8 +223,8 @@ def substring(
         description="A string to extract a slice from.",
         max_length=100,
     ),
-    start: int = Path(..., description="Where to start the extraction", ge=0, le=100),
-    end: int = Path(..., description="Where to end the extraction", ge=0, le=100),
+    start: int = Path(..., description="Where to end the extraction", ge=0, le=100),
+    end: int = Path(..., description="Where to start the extraction", ge=0, le=100),
 ):
     """Extracts a substring from a larger string.
 
@@ -248,19 +244,12 @@ def password_strength(
     password: str = Path(
         ...,
         description="Your password. *Do not use a real one*, it gets logged and is publicly visible.",
-        max_length=100,
+        max_length=100, min_length=6,
     )
 ):
-    """A strenght score for passwords between 0 and 10. Is your password strong enough?.
+    """A strength score for passwords between 0 and 10. Is your password strong enough?.
 
     0 is a weak password, 10 is a strong password.
-
-    Rules:
-    * A password should be longer than 12 characters. Score is reduced by the distance from the actual length and 12.
-    * A password should include at least one upper case letter, one lower case letter, and one number. Score is reduced by 2 for every infraction.
-    * A password shouldn't contain any consecutive letters or numbers. 1 is deducted from score for every infraction.
-    * A password shouldn't be the words “password”, "admin" or "root". Violating this rule results in a score of 0.
-    * A password shouldn't be the same letter or number repeated for its entire length. This deducts 7 points.
 
     Return Type: int
     """
@@ -302,7 +291,7 @@ def password_strength(
 @app.get("/counterstring/{length}/{char}")
 def counterstring(
     length: int = Path(
-        ..., description="Size of the desired counterstring", ge=0, le=150
+        ..., description="Size of a string to generate with the length of it being the given length and the separation string, which can be any character, is marking the location whose number is to the left of it in the string ", ge=0, le=150
     ),
     char: str = Path(
         ...,
@@ -312,9 +301,9 @@ def counterstring(
 ):
     """Generates a counterstring, a string that measures itself, and helps you measure software.
 
-    Learn more about counterstrings here: https://www.satisfice.com/blog/archives/22
+    Learn more about counterstrings here: https://www.satisfice.com/blog/archives/45
 
-    Return Type: str
+    Return Type: counterstring
     """
     log_count_history(
         l=True, h=True, c=True, msg=f"counterstring {length} {char}", inc=1
@@ -338,7 +327,7 @@ def counterstring(
 
 @app.get("/anagrams/{text}")
 def anagrams(
-    text: str = Path(..., description="Text to find anagrams for. Fun!", max_length=100)
+
 ):
     """Finds anagrams for the text provided.
 
