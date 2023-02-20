@@ -347,38 +347,40 @@ def rand_str(
 
     Return Type: str
     """
+    log_count_history(
+        l=False, h=True, c=True, msg=f"random {length}", inc=1
+    )
 
     random_string = "".join(
         random.choices(string.ascii_letters + string.digits, k=length)
     )
-    print("random", random_string)
 
-    with open("random.txt", "r") as r:
-        rnd = r.read()
+    # with open("random.txt", "r") as r:
+    #     rnd = r.read()
 
-    prefix = []
-    for letter in rnd:
-        ordinal = ord(letter) + 1
-        if ord(letter) == 122:
-            ordinal = 97
-        if ord(letter) == 90:
-            ordinal = 65
-        if ord(letter) == 57:
-            ordinal = 48
-        prefix.append(chr(ordinal))
+    # prefix = []
+    # for letter in rnd:
+    #     ordinal = ord(letter) + 1
+    #     if ord(letter) == 122:
+    #         ordinal = 97
+    #     if ord(letter) == 90:
+    #         ordinal = 65
+    #     if ord(letter) == 57:
+    #         ordinal = 48
+    #     prefix.append(chr(ordinal))
        
-    prefix = "".join(prefix)[:length]
-    print("prefix", prefix)
+    # prefix = "".join(prefix)[:length]
 
-    final_random = prefix + random_string[len(rnd) :]
-    print("final", final_random)
+    # final_random = prefix + random_string[len(rnd) :]
 
-    with open("random.txt", "w+") as r:
-        fcntl.flock(r, fcntl.LOCK_EX)
-        r.write(final_random)
-        fcntl.flock(r, fcntl.LOCK_UN)
+    # with open("random.txt", "w+") as r:
+    #     fcntl.flock(r, fcntl.LOCK_EX)
+    #     r.write(final_random)
+    #     fcntl.flock(r, fcntl.LOCK_UN)
 
-    return JSONResponse(content={"res": final_random})
+    log(f"random {length} {random_string}")
+
+    return JSONResponse(content={"res": random_string})
 
 
 @app.get("/anagrams/{text}")
