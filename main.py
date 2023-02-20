@@ -3,8 +3,29 @@ import string
 import random
 import datetime
 
-from fastapi import FastAPI, Path, Query
-from fastapi.responses import Response, JSONResponse, FileResponse
+from fastapi import FastAPI, Path, Query, status, HTTPException
+from fastapi.responses import Response, JSONResponse, FileResponse, PlainTextResponse
+from pydantic import BaseModel
+
+
+class StringOut(BaseModel):
+    res: str
+
+
+class ListStringOut(BaseModel):
+    res: list[str]
+
+
+class IntOut(BaseModel):
+    res: int
+
+
+class ListIntOut(BaseModel):
+    res: list[int]
+
+
+class Message(BaseModel):
+    detail: str
 
 
 def count(increment=None):
@@ -74,7 +95,7 @@ app = FastAPI(
 log("T-Tweak Started")
 
 
-@app.get("/")
+@app.get("/", response_model=StringOut)
 def root():
     """Provides status of the t-tweak service.
 
@@ -98,7 +119,7 @@ async def favicon():
     return FileResponse("favicon.ico")
 
 
-@app.get("/count/all")
+@app.get("/count/all", response_model=IntOut)
 def count_all():
     """Provides the total count of text tweaks serviced by t-tweak.
 
@@ -109,17 +130,18 @@ def count_all():
     return JSONResponse(content={"res": count()})
 
 
-@app.get("/history")
+@app.get("/history", response_model=ListStringOut)
 def get_history():
     """Retrieves the entire history of text tweaks serviced by t-tweak.
 
     Return Type: str
     """
     log("get_history")
+
     return JSONResponse(content=history())
 
 
-@app.get("/length/{text}")
+@app.get("/length/{text}", response_model=IntOut)
 def length(text: str = Path(..., description="Text to be measured", max_length=100)):
     """Calculates the length of a text provided.
 
@@ -127,10 +149,10 @@ def length(text: str = Path(..., description="Text to be measured", max_length=1
     """
     log_count_history(l=True, h=True, c=True, msg=f"length {text}", inc=1)
 
-    return JSONResponse(content={"res": str(len(text))})
+    return JSONResponse(content={"res": len(text)})
 
 
-@app.get("/reverse/{text}")
+@app.get("/reverse/{text}", response_model=StringOut)
 def reverse(text: str = Path(..., description="Text to be reversed", max_length=100)):
     """Reverses the text provided.
 
@@ -141,7 +163,7 @@ def reverse(text: str = Path(..., description="Text to be reversed", max_length=
     return JSONResponse(content={"res": text[::-1]})
 
 
-@app.get("/upper/{text}")
+@app.get("/upper/{text}", response_model=StringOut)
 def upper(
     text: str = Path(..., description="Text to convert to upper case", max_length=100)
 ):
@@ -156,7 +178,7 @@ def upper(
     return JSONResponse(content={"res": text.upper()})
 
 
-@app.get("/lower/{text}")
+@app.get("/lower/{text}", response_model=StringOut)
 def lower(
     text: str = Path(..., description="Text to convert to lower case", max_length=100)
 ):
@@ -171,7 +193,7 @@ def lower(
     return JSONResponse(content={"res": text.lower()})
 
 
-@app.get("/mix_case/{text}")
+@app.get("/mix_case/{text}", response_model=StringOut)
 def mix_case(
     text: str = Path(..., description="Text to alternate cases", max_length=100)
 ):
@@ -188,7 +210,7 @@ def mix_case(
     return JSONResponse(content={"res": res})
 
 
-@app.get("/find/{string}/{sub}")
+@app.get("/find/{string}/{sub}", response_model=ListIntOut)
 def find(
     string: str = Path(
         ...,
@@ -221,7 +243,13 @@ def find(
     return JSONResponse(content={"res": res})
 
 
-@app.get("/substring/{string}/{start}/{end}")
+@app.get(
+    "/substring/{string}/{start}/{end}",
+    response_model=StringOut,
+    responses={
+        409: {"model": Message, "description": "Conflict (incompatible start and end)"}
+    },
+)
 def substring(
     string: str = Path(
         ...,
@@ -241,10 +269,16 @@ def substring(
         l=True, h=True, c=True, msg=f"substring {string}, {start}:{end}", inc=1
     )
 
+    if end < start:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Conflict (incompatible start and end)",
+        )
+
     return JSONResponse(content={"res": string[start:end]})
 
 
-@app.get("/password/{password}")
+@app.get("/password/{password}", response_model=IntOut)
 def password_strength(
     password: str = Path(
         ...,
@@ -300,7 +334,7 @@ def password_strength(
     return JSONResponse(content={"res": min(max(score, 0), 10)})
 
 
-@app.get("/counterstring/{length}/{char}")
+@app.get("/counterstring/{length}/{char}", response_model=StringOut)
 def counterstring(
     length: int = Path(
         ..., description="Size of the desired counterstring", ge=0, le=150
@@ -337,7 +371,7 @@ def counterstring(
     return JSONResponse(content={"res": counterstring})
 
 
-@app.get("/random")
+@app.get("/random", response_model=StringOut)
 def rand_str(
     length: int = Query(
         ..., description="Size of the desired random string", ge=0, le=150
@@ -347,9 +381,7 @@ def rand_str(
 
     Return Type: str
     """
-    log_count_history(
-        l=False, h=True, c=True, msg=f"random {length}", inc=1
-    )
+    log_count_history(l=False, h=True, c=True, msg=f"random {length}", inc=1)
 
     random_string = "".join(
         random.choices(string.ascii_letters + string.digits, k=length)
@@ -368,7 +400,7 @@ def rand_str(
     #     if ord(letter) == 57:
     #         ordinal = 48
     #     prefix.append(chr(ordinal))
-       
+
     # prefix = "".join(prefix)[:length]
 
     # final_random = prefix + random_string[len(rnd) :]
@@ -383,7 +415,7 @@ def rand_str(
     return JSONResponse(content={"res": random_string})
 
 
-@app.get("/anagrams/{text}")
+@app.get("/anagrams/{text}", response_model=ListStringOut)
 def anagrams(
     text: str = Path(..., description="Text to find anagrams for. Fun!", max_length=100)
 ):
@@ -391,7 +423,7 @@ def anagrams(
 
     If more than one anagram is found, all of the anagrams are returned within a list.
 
-    Return Type: Union[list[str], str, NoneType]
+    Return Type: list[str], str, NoneType]
     """
     log_count_history(l=True, h=True, c=True, msg=f"anagrams {text}", inc=1)
 
@@ -406,17 +438,27 @@ def anagrams(
     if text in anagrams:
         anagrams.remove(text)
 
-    # Extract element if list contains only it, None if list is empty, list otherwise
-    res = anagrams if len(anagrams) > 1 else None if len(anagrams) == 0 else anagrams[0]
-
-    return JSONResponse(content={"res": res})
+    return JSONResponse(content={"res": anagrams})
 
 
-# @app.get("/count/mine")
-# def count_mine(session_count: Union[str, None] = Cookie(default=0)):
-#     response = Response()
-#     response.set_cookie(key="localcount", value=f"{int(session_count) + 1}")
-#     return {"res": str(session_count)}
+@app.get(
+    "/time",
+    responses={203: {"model": Message, "description": "Non Authoritative Information"}},
+    response_model=Message,
+)
+def server_time():
+    """Retrieves the server time. For debug purposes.
+
+    Return Type: str
+    """
+    log_count_history(l=False, h=True, c=True, msg=f"random {length}", inc=1)
+
+    raise HTTPException(
+        status_code=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
+        detail=f"{datetime.datetime.now().strftime('%c')}",
+    )
+
+    return JSONResponse(content={"res": f"{datetime.datetime.now().strftime('%c')}"})
 
 
 if __name__ == "__main__":
