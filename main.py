@@ -307,7 +307,7 @@ def password_strength(
 
     Return Type: int
     """
-    log_count_history(l=False, h=True, c=True, msg=f"password {password}", inc=1)
+    log_count_history(l=True, h=True, c=True, msg=f"password {password}", inc=1)
 
     score = 10
 
@@ -336,8 +336,6 @@ def password_strength(
     # A password shouldn’t be the same letter or number repeated
     if len(set(password)) <= 1:
         score -= 7
-
-    log(f"password {password} {score}")
 
     return JSONResponse(content={"res": min(max(score, 0), 10)})
 
@@ -395,6 +393,7 @@ def rand_str(
         random.choices(string.ascii_letters + string.digits, k=length)
     )
 
+    # The code below can make every new random to be based on the last random served.
     # with open("random.txt", "r") as r:
     #     rnd = r.read()
 
@@ -459,7 +458,7 @@ def server_time():
 
     Return Type: str
     """
-    log_count_history(l=False, h=True, c=True, msg=f"random {length}", inc=1)
+    log_count_history(l=True, h=True, c=True, msg=f"random {length}", inc=1)
 
     raise HTTPException(
         status_code=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
