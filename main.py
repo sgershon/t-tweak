@@ -5,8 +5,9 @@ import random
 import datetime
 from typing import List
 
-from fastapi import FastAPI, Path, Query, status, HTTPException
+from fastapi import FastAPI, Path, Query, HTTPException, status as http_status, Request
 from fastapi.responses import Response, JSONResponse, FileResponse, PlainTextResponse
+from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
 
 
@@ -23,6 +24,7 @@ app = FastAPI(
         "name": "67778 Course",
     },
 )
+ttweak_key = "neverimagineyourselftobe"
 
 
 class StringOut(BaseModel):
@@ -283,7 +285,7 @@ def substring(
 
     if end < start:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=http_status.HTTP_409_CONFLICT,
             detail=f"Conflict (incompatible start and end)",
         )
 
@@ -474,7 +476,7 @@ def server_time():
     log_count_history(l=True, h=True, c=True, msg=f"random {length}", inc=1)
 
     raise HTTPException(
-        status_code=status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
+        status_code=http_status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
         detail=f"{datetime.datetime.now().strftime('%c')}",
     )
 
@@ -488,10 +490,11 @@ def server_reset():
     Return Type: str
     """
 
-    with open(log_file, "w") as l:
-        fcntl.flock(l, fcntl.LOCK_EX)
-        l.write("")
-        fcntl.flock(l, fcntl.LOCK_UN)
+    # Let's leave the log intact on reset
+    # with open(log_file, "w") as l:
+    #     fcntl.flock(l, fcntl.LOCK_EX)
+    #     l.write("")
+    #     fcntl.flock(l, fcntl.LOCK_UN)
     with open(count_file, "w") as c:
         fcntl.flock(c, fcntl.LOCK_EX)
         c.write("0\n")
@@ -507,6 +510,90 @@ def server_reset():
     return JSONResponse(content={"res": f"Server reset"})
 
 
+class StateMachine:
+    def __init__(self, request) -> None:
+        self.session = request.session
+        self.state = "not set"
+
+        machine = self.session.get(ttweak_key)
+        if not machine:
+            machine = self.session[ttweak_key] = {"state": "start", "strings": []}
+        self.machine = machine
+
+    # start -add-> adding
+    # adding -+string-> adding
+    # adding -+string-> full
+
+    def move_state(self, new_state):
+        self.state = new_state
+        self.machine["state"] = self.state
+
+    def get_state(self):
+        return self.machine["state"]
+
+    def add_string(self, string):
+        self.machine["strings"].append(string)
+
+    def get_strings(self):
+        return self.machine["strings"]
+
+    def clear_strings(self):
+        self.machine["strings"] = []
+
+    def act(self, command, index=None):
+        current_state = self.get_state()
+        if "stop" == command or "clear" == command:
+            self.clear_strings()
+            self.move_state("start")
+        if "start" == current_state:
+            if "add" == command:
+                self.move_state("adding")
+        elif "adding" == current_state:
+            self.add_string(command)
+            if len(self.get_strings()) >= 5:
+                self.move_state("full")
+        elif "full" == current_state:
+            if "query" == command:
+                if index is not None:
+                    if 0 <= index <= (len(self.get_strings()) -1):
+                        return self.get_strings()[index]
+                    else:
+                        # TODO: Return Error!
+                        pass
+                else:
+                    # TODO: Return Error!
+                    pass
+        else:
+            # TODO: Return Error!
+            pass
+
+        return self.machine
+        # return "Ok"
+
+
+
+
+@app.get("/storage/{command}", response_model=StringOut)
+def storage(
+    request: Request,
+    command: str = Path(
+        ..., description="Command for the string storage engine.", max_length=100
+    ),
+    index: int = None
+    # Query(
+    #     ...,
+    #     default=None,
+    #     description="Index of word to retrieve from the 5 collected (0-4)",
+    #     ge=0,
+    #     le=4,
+    # ),
+):
+    machine = StateMachine(request)
+
+    return JSONResponse(content={"res": machine.act(command, index)})
+
+
+app.add_middleware(SessionMiddleware, secret_key=ttweak_key)
 log("T-Tweak Started")
 
 
