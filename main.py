@@ -555,7 +555,7 @@ class StateMachine:
         elif "full" == current_state:
             if "query" == command:
                 if index is not None:
-                    if 0 <= index <= (len(self.get_strings()) -1):
+                    if 0 <= index <= (len(self.get_strings()) - 1):
                         return self.get_strings()[index]
                     else:
                         # TODO: Return Error!
@@ -569,8 +569,6 @@ class StateMachine:
 
         return self.machine
         # return "Ok"
-
-
 
 
 @app.get("/storage/{command}", response_model=StringOut)
