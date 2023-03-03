@@ -294,7 +294,7 @@ def password_strength(
         max_length=100,
     )
 ):
-    """A strenght score for passwords between 0 and 10. Is your password strong enough?.
+    """A strength score for passwords between 0 and 10. Is your password strong enough?.
 
     0 is a weak password, 10 is a strong password.
 
