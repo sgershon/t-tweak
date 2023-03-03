@@ -45,11 +45,17 @@ class Message(BaseModel):
     detail: str
 
 
+count_file = "count.cnt"
+hist_file = "history.txt"
+log_file = "log.log"
+
+
 def count(increment=None):
-    count_file = "count.cnt"
+    cnt = 0
     if os.path.isfile(count_file):
         with open(count_file, "r") as c:
-            cnt = int(c.read())
+            r = c.read()
+            cnt = int(r) if r.isnumeric() else 0
     if type(increment) is int:
         with open(count_file, "w+") as c:
             fcntl.flock(c, fcntl.LOCK_EX)
@@ -59,7 +65,7 @@ def count(increment=None):
 
 
 def history(new_string=None):
-    hist_file = "history.txt"
+    hist = []
     if os.path.isfile(hist_file):
         with open(hist_file, "r") as h:
             hist = h.readlines()
@@ -70,11 +76,11 @@ def history(new_string=None):
             h.writelines(hist[-50:])
             fcntl.flock(h, fcntl.LOCK_UN)
 
-    return hist
+    return [h.strip() for h in hist]
 
 
 def log(msg):
-    log_file = "log.log"
+    items = []
     if os.path.isfile(log_file):
         with open(log_file, "r") as l:
             items = l.readlines()
@@ -102,7 +108,7 @@ def log_count_history(l=True, h=True, c=True, **kwargs):
 
 
 @app.get("/", response_model=StringOut)
-def root():
+def status():
     """Provides status of the t-tweak service.
 
     Return Type: str"""
@@ -378,7 +384,11 @@ def counterstring(
 def reset_random(seed):
     log(f"Setting seed {seed}")
     random.seed(seed)
-reset_random(5)
+
+
+random_seed = 5
+reset_random(random_seed)
+
 
 @app.get("/random", response_model=StringOut)
 def rand_str(
@@ -469,6 +479,32 @@ def server_time():
     )
 
     return JSONResponse(content={"res": f"{datetime.datetime.now().strftime('%c')}"})
+
+
+@app.get("/reset_server", response_model=StringOut)
+def server_reset():
+    """Resets the server: reinitializes history and count.
+
+    Return Type: str
+    """
+
+    with open(log_file, "w") as l:
+        fcntl.flock(l, fcntl.LOCK_EX)
+        l.write("")
+        fcntl.flock(l, fcntl.LOCK_UN)
+    with open(count_file, "w") as c:
+        fcntl.flock(c, fcntl.LOCK_EX)
+        c.write("0\n")
+        fcntl.flock(c, fcntl.LOCK_UN)
+    with open(hist_file, "w") as h:
+        fcntl.flock(h, fcntl.LOCK_EX)
+        h.write("")
+        fcntl.flock(h, fcntl.LOCK_UN)
+    reset_random(random_seed)
+
+    log_count_history(l=True, h=True, c=True, msg=f"reset_server", inc=1)
+
+    return JSONResponse(content={"res": f"Server reset"})
 
 
 log("T-Tweak Started")
