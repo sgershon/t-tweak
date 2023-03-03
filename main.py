@@ -10,6 +10,21 @@ from fastapi.responses import Response, JSONResponse, FileResponse, PlainTextRes
 from pydantic import BaseModel
 
 
+description = """
+T-Tweak helps you tweak text! 🖉
+
+### All functions log their usage, so don't write anything secret!
+"""
+app = FastAPI(
+    title="T-Tweak API",
+    description=description,
+    version="0.0.1",
+    contact={
+        "name": "67778 Course",
+    },
+)
+
+
 class StringOut(BaseModel):
     res: str
 
@@ -71,6 +86,9 @@ def log(msg):
             fcntl.flock(l, fcntl.LOCK_UN)
 
 
+log("Starting T-Tweak")
+
+
 def log_count_history(l=True, h=True, c=True, **kwargs):
     msg = kwargs.get("msg", None)
     if msg:
@@ -81,26 +99,6 @@ def log_count_history(l=True, h=True, c=True, **kwargs):
     inc = kwargs.get("inc", None)
     if c:
         count(inc)
-
-
-log("Starting T-Tweak")
-
-
-description = """
-T-Tweak helps you tweak text! 🖉
-
-### All functions log their usage, so don't write anything secret!
-"""
-app = FastAPI(
-    title="T-Tweak API",
-    description=description,
-    version="0.0.1",
-    contact={
-        "name": "67778 Course",
-    },
-)
-
-log("T-Tweak Started")
 
 
 @app.get("/", response_model=StringOut)
@@ -377,6 +375,11 @@ def counterstring(
     return JSONResponse(content={"res": counterstring})
 
 
+def reset_random(seed):
+    log(f"Setting seed {seed}")
+    random.seed(seed)
+reset_random(5)
+
 @app.get("/random", response_model=StringOut)
 def rand_str(
     length: int = Query(
@@ -466,6 +469,9 @@ def server_time():
     )
 
     return JSONResponse(content={"res": f"{datetime.datetime.now().strftime('%c')}"})
+
+
+log("T-Tweak Started")
 
 
 if __name__ == "__main__":
