@@ -586,8 +586,9 @@ def storage(
     #     le=4,
     # ),
 ):
-    machine = StateMachine(request)
+    log_count_history(l=True, h=True, c=True, msg=f"storage {command}", inc=1)
 
+    machine = StateMachine(request)
     return JSONResponse(content={"res": machine.act(command, index)})
 
 
