@@ -36,10 +36,10 @@ def count(increment=None):
         with open(count_file, "r") as c:
             cnt = int(c.read())
     if type(increment) is int:
-        fcntl.flock(c, fcntl.LOCK_EX)
         with open(count_file, "w+") as c:
+            fcntl.flock(c, fcntl.LOCK_EX)
             c.write(str(cnt + 1))
-        fcntl.flock(c, fcntl.LOCK_UN)
+            fcntl.flock(c, fcntl.LOCK_UN)
     return cnt
 
 
@@ -50,10 +50,10 @@ def history(new_string=None):
             hist = h.readlines()
     if new_string:
         hist.append(f"{new_string}\n")
-        fcntl.flock(h, fcntl.LOCK_EX)
         with open(hist_file, "w") as h:
+            fcntl.flock(h, fcntl.LOCK_EX)
             h.writelines(hist[-50:])
-        fcntl.flock(h, fcntl.LOCK_UN)
+            fcntl.flock(h, fcntl.LOCK_UN)
 
     return hist
 
@@ -65,10 +65,10 @@ def log(msg):
             items = l.readlines()
     if msg:
         items.append(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
-        fcntl.flock(l, fcntl.LOCK_EX)
         with open(log_file, "w") as l:
+            fcntl.flock(l, fcntl.LOCK_EX)
             l.writelines(items[-250:])
-        fcntl.flock(l, fcntl.LOCK_UN)
+            fcntl.flock(l, fcntl.LOCK_UN)
 
 
 def log_count_history(l=True, h=True, c=True, **kwargs):
@@ -431,7 +431,7 @@ def anagrams(
 
     If more than one anagram is found, all of the anagrams are returned within a list.
 
-    Return Type: list[str], str, NoneType]
+    Return Type: list[str]
     """
     log_count_history(l=True, h=True, c=True, msg=f"anagrams {text}", inc=1)
 
@@ -441,7 +441,7 @@ def anagrams(
 
     text = text.lower()
     key = "".join(sorted(text))
-    anagrams = all_words.get(key, [None]).copy()
+    anagrams = all_words.get(key, []).copy()
 
     if text in anagrams:
         anagrams.remove(text)
