@@ -473,7 +473,7 @@ def server_time():
 
     Return Type: str
     """
-    log_count_history(l=True, h=True, c=True, msg=f"random {length}", inc=1)
+    log_count_history(l=True, h=True, c=True, msg=f"server_time", inc=1)
 
     raise HTTPException(
         status_code=http_status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
