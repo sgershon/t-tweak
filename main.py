@@ -1,7 +1,9 @@
+import os
 import fcntl
 import string
 import random
 import datetime
+from typing import List
 
 from fastapi import FastAPI, Path, Query, status, HTTPException
 from fastapi.responses import Response, JSONResponse, FileResponse, PlainTextResponse
@@ -13,7 +15,7 @@ class StringOut(BaseModel):
 
 
 class ListStringOut(BaseModel):
-    res: list[str]
+    res: List[str]
 
 
 class IntOut(BaseModel):
@@ -21,7 +23,7 @@ class IntOut(BaseModel):
 
 
 class ListIntOut(BaseModel):
-    res: list[int]
+    res: List[int]
 
 
 class Message(BaseModel):
@@ -29,38 +31,44 @@ class Message(BaseModel):
 
 
 def count(increment=None):
-    with open("count.cnt", "r") as c:
-        cnt = int(c.read())
+    count_file = "count.cnt"
+    if os.path.isfile(count_file):
+        with open(count_file, "r") as c:
+            cnt = int(c.read())
     if type(increment) is int:
-        with open("count.cnt", "w+") as c:
-            fcntl.flock(c, fcntl.LOCK_EX)
+        fcntl.flock(c, fcntl.LOCK_EX)
+        with open(count_file, "w+") as c:
             c.write(str(cnt + 1))
-            fcntl.flock(c, fcntl.LOCK_UN)
+        fcntl.flock(c, fcntl.LOCK_UN)
     return cnt
 
 
 def history(new_string=None):
-    with open("history.txt", "r") as h:
-        hist = h.readlines()
+    hist_file = "history.txt"
+    if os.path.isfile(hist_file):
+        with open(hist_file, "r") as h:
+            hist = h.readlines()
     if new_string:
         hist.append(f"{new_string}\n")
-        with open("history.txt", "w") as h:
-            fcntl.flock(h, fcntl.LOCK_EX)
+        fcntl.flock(h, fcntl.LOCK_EX)
+        with open(hist_file, "w") as h:
             h.writelines(hist[-50:])
-            fcntl.flock(h, fcntl.LOCK_UN)
+        fcntl.flock(h, fcntl.LOCK_UN)
 
     return hist
 
 
 def log(msg):
-    with open("log.log", "r") as l:
-        items = l.readlines()
+    log_file = "log.log"
+    if os.path.isfile(log_file):
+        with open(log_file, "r") as l:
+            items = l.readlines()
     if msg:
         items.append(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
-        with open("log.log", "w") as l:
-            fcntl.flock(l, fcntl.LOCK_EX)
+        fcntl.flock(l, fcntl.LOCK_EX)
+        with open(log_file, "w") as l:
             l.writelines(items[-250:])
-            fcntl.flock(l, fcntl.LOCK_UN)
+        fcntl.flock(l, fcntl.LOCK_UN)
 
 
 def log_count_history(l=True, h=True, c=True, **kwargs):
