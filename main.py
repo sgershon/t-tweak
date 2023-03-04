@@ -1,13 +1,31 @@
-from __future__ import annotations
-from typing import List
+#from __future__ import annotations
+import os
 import fcntl
 import string
 import random
 import datetime
+from typing import List
 
-from fastapi import FastAPI, Path, Query, status, HTTPException
+from fastapi import FastAPI, Path, Query, HTTPException, status as http_status, Request
 from fastapi.responses import Response, JSONResponse, FileResponse, PlainTextResponse
+from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
+
+
+description = """
+T-Tweak helps you tweak text! 🖉
+
+### All functions log their usage, so don't write anything secret!
+"""
+app = FastAPI(
+    title="T-Tweak API",
+    description=description,
+    version="0.0.1",
+    contact={
+        "name": "67778 Course",
+    },
+)
+ttweak_key = "neverimagineyourselftobe"
 
 
 class StringOut(BaseModel):
@@ -30,11 +48,19 @@ class Message(BaseModel):
     detail: str
 
 
+count_file = "count.cnt"
+hist_file = "history.txt"
+log_file = "log.log"
+
+
 def count(increment=None):
-    with open("count.cnt", "r") as c:
-        cnt = int(c.read())
+    cnt = 0
+    if os.path.isfile(count_file):
+        with open(count_file, "r") as c:
+            r = c.read()
+            cnt = int(r) if r.isnumeric() else 0
     if type(increment) is int:
-        with open("count.cnt", "w+") as c:
+        with open(count_file, "w+") as c:
             fcntl.flock(c, fcntl.LOCK_EX)
             c.write(str(cnt + 1))
             fcntl.flock(c, fcntl.LOCK_UN)
@@ -42,27 +68,34 @@ def count(increment=None):
 
 
 def history(new_string=None):
-    with open("history.txt", "r") as h:
-        hist = h.readlines()
+    hist = []
+    if os.path.isfile(hist_file):
+        with open(hist_file, "r") as h:
+            hist = h.readlines()
     if new_string:
         hist.append(f"{new_string}\n")
-        with open("history.txt", "w") as h:
+        with open(hist_file, "w") as h:
             fcntl.flock(h, fcntl.LOCK_EX)
             h.writelines(hist[-50:])
             fcntl.flock(h, fcntl.LOCK_UN)
 
-    return hist
+    return [h.strip() for h in hist]
 
 
 def log(msg):
-    with open("log.log", "r") as l:
-        items = l.readlines()
+    items = []
+    if os.path.isfile(log_file):
+        with open(log_file, "r") as l:
+            items = l.readlines()
     if msg:
         items.append(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
-        with open("log.log", "w") as l:
+        with open(log_file, "w") as l:
             fcntl.flock(l, fcntl.LOCK_EX)
             l.writelines(items[-250:])
             fcntl.flock(l, fcntl.LOCK_UN)
+
+
+log("Starting T-Tweak")
 
 
 def log_count_history(l=True, h=True, c=True, **kwargs):
@@ -75,26 +108,6 @@ def log_count_history(l=True, h=True, c=True, **kwargs):
     inc = kwargs.get("inc", None)
     if c:
         count(inc)
-
-
-log("Starting T-Tweak")
-
-
-description = """
-T-Tweak helps you tweak text! 🖉
-
-### All functions log their usage, so don't write anything secret!
-"""
-app = FastAPI(
-    title="T-Tweak API",
-    description=description,
-    version="0.0.1",
-    contact={
-        "name": "67778 Course",
-    },
-)
-
-log("T-Tweak Started")
 
 
 @app.get("/", response_model=StringOut)
@@ -127,7 +140,7 @@ def count_all():
 
     Return Type: int
     """
-    log(f"Count All")
+    log(f"count all")
 
     return JSONResponse(content={"res": count()})
 
@@ -146,7 +159,7 @@ def get_history():
 def get_length(text: str = Path(..., description="Text to be measured", max_length=100)):
     """Calculates the length of a text provided.
 
-    Return Type: int
+    Return Type: str
     """
     log_count_history(l=True, h=True, c=True, msg=f"length {text}", inc=1)
 
@@ -164,7 +177,7 @@ def reverse(text: str = Path(..., description="Text to be reversed", max_length=
     return JSONResponse(content={"res": text[::-1]})
 
 
-@app.get("/upper/{text}")
+@app.get("/upper/{text}", response_model=StringOut)
 def upper(
     text: str = Path(..., description="Text to convert to upper case")
 ):
@@ -268,7 +281,7 @@ def substring(
 
     if end < start:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
+            status_code=http_status.HTTP_409_CONFLICT,
             detail=f"Conflict (incompatible start and end)",
         )
 
@@ -289,7 +302,7 @@ def password_strength(
 
     Return Type: int
     """
-    log_count_history(l=False, h=True, c=True, msg=f"password {password}", inc=1)
+    log_count_history(l=True, h=True, c=True, msg=f"password {password}", inc=1)
 
     score = 10
 
@@ -361,6 +374,15 @@ def counterstring(
     return JSONResponse(content={"res": counterstring})
 
 
+def reset_random(seed):
+    log(f"Setting seed {seed}")
+    random.seed(seed)
+
+
+random_seed = 5
+reset_random(random_seed)
+
+
 @app.get("/random", response_model=StringOut)
 def rand_str(
     length: int = Query(
@@ -423,7 +445,7 @@ def anagrams(
 
     text = text.lower()
     key = "".join(sorted(text))
-    anagrams = all_words.get(key, [None]).copy()
+    anagrams = all_words.get(key, []).copy()
 
     if text in anagrams:
         anagrams.remove(text)
@@ -441,7 +463,7 @@ def server_time():
 
     Return Type: str
     """
-    log_count_history(l=False, h=True, c=True, msg=f"random {length}", inc=1)
+    log_count_history(l=True, h=True, c=True, msg=f"server_time", inc=1)
 
     raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -449,6 +471,119 @@ def server_time():
     )
 
     return JSONResponse(content={"res": f"{datetime.datetime.now().strftime('%c')}"})
+
+
+@app.get("/reset_server", response_model=StringOut)
+def server_reset():
+    """Resets the server: reinitializes history and count.
+
+    Return Type: str
+    """
+
+    # Let's leave the log intact on reset
+    # with open(log_file, "w") as l:
+    #     fcntl.flock(l, fcntl.LOCK_EX)
+    #     l.write("")
+    #     fcntl.flock(l, fcntl.LOCK_UN)
+    with open(count_file, "w") as c:
+        fcntl.flock(c, fcntl.LOCK_EX)
+        c.write("0\n")
+        fcntl.flock(c, fcntl.LOCK_UN)
+    with open(hist_file, "w") as h:
+        fcntl.flock(h, fcntl.LOCK_EX)
+        h.write("")
+        fcntl.flock(h, fcntl.LOCK_UN)
+    reset_random(random_seed)
+
+    log_count_history(l=True, h=True, c=True, msg=f"reset_server", inc=1)
+
+    return JSONResponse(content={"res": f"Server reset"})
+
+
+class StateMachine:
+    def __init__(self, request) -> None:
+        self.session = request.session
+        self.state = "not set"
+
+        machine = self.session.get(ttweak_key)
+        if not machine:
+            machine = self.session[ttweak_key] = {"state": "start", "strings": []}
+        self.machine = machine
+
+    # start -add-> adding
+    # adding -+string-> adding
+    # adding -+string-> full
+
+    def move_state(self, new_state):
+        self.state = new_state
+        self.machine["state"] = self.state
+
+    def get_state(self):
+        return self.machine["state"]
+
+    def add_string(self, string):
+        self.machine["strings"].append(string)
+
+    def get_strings(self):
+        return self.machine["strings"]
+
+    def clear_strings(self):
+        self.machine["strings"] = []
+
+    def act(self, command, index=None):
+        current_state = self.get_state()
+        if "stop" == command or "clear" == command:
+            self.clear_strings()
+            self.move_state("start")
+        if "start" == current_state:
+            if "add" == command:
+                self.move_state("adding")
+        elif "adding" == current_state:
+            self.add_string(command)
+            if len(self.get_strings()) >= 5:
+                self.move_state("full")
+        elif "full" == current_state:
+            if "query" == command:
+                if index is not None:
+                    if 0 <= index <= (len(self.get_strings()) - 1):
+                        return self.get_strings()[index]
+                    else:
+                        # TODO: Return Error!
+                        pass
+                else:
+                    # TODO: Return Error!
+                    pass
+        else:
+            # TODO: Return Error!
+            pass
+
+        return self.machine
+        # return "Ok"
+
+
+@app.get("/storage/{command}", response_model=StringOut)
+def storage(
+    request: Request,
+    command: str = Path(
+        ..., description="Command for the string storage engine.", max_length=100
+    ),
+    index: int = None
+    # Query(
+    #     ...,
+    #     default=None,
+    #     description="Index of word to retrieve from the 5 collected (0-4)",
+    #     ge=0,
+    #     le=4,
+    # ),
+):
+    log_count_history(l=True, h=True, c=True, msg=f"storage {command}", inc=1)
+
+    machine = StateMachine(request)
+    return JSONResponse(content={"res": machine.act(command, index)})
+
+
+app.add_middleware(SessionMiddleware, secret_key=ttweak_key)
+log("T-Tweak Started")
 
 
 if __name__ == "__main__":
