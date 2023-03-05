@@ -520,9 +520,24 @@ class StateMachine:
             machine = self.session[ttweak_key] = {"state": "start", "strings": []}
         self.machine = machine
 
-    # start -add-> adding
-    # adding -+string-> adding
-    # adding -+string-> full
+        # http://www.plantuml.com/plantuml/uml
+        # @startuml
+        # !theme vibrant
+        # Start : Nothing happens here
+        # [*] --> Start
+        # 
+        # Adding: Receives words to store
+        # Start --> Adding : Add
+        # Adding --> Adding : <New word>
+        # Adding --> Full : <5 words added>
+        # 
+        # Full: Can query for words stored
+        # Full --> Full : Query
+        # 
+        # Start --> Start : "Stop / Clear
+        # Adding --> Start : Stop / Clear
+        # Full --> Start : Stop / Clear
+        # @enduml
 
     def move_state(self, new_state):
         self.state = new_state
