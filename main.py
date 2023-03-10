@@ -484,7 +484,9 @@ def server_time():
 
 
 @app.get("/reset_server", response_model=StringOut)
-def server_reset():
+def server_reset(
+    request: Request,
+):
     """Resets the server: reinitializes history and count.
 
     Return Type: str
@@ -495,15 +497,21 @@ def server_reset():
     #     fcntl.flock(l, fcntl.LOCK_EX)
     #     l.write("")
     #     fcntl.flock(l, fcntl.LOCK_UN)
+
     with open(count_file, "w") as c:
         fcntl.flock(c, fcntl.LOCK_EX)
         c.write("0\n")
         fcntl.flock(c, fcntl.LOCK_UN)
+
     with open(hist_file, "w") as h:
         fcntl.flock(h, fcntl.LOCK_EX)
         h.write("")
         fcntl.flock(h, fcntl.LOCK_UN)
+
     reset_random(random_seed)
+
+    machine = StateMachine(request)
+    machine.act(command="stop")
 
     log_count_history(l=True, h=True, c=True, msg=f"reset_server", inc=1)
 
@@ -513,19 +521,20 @@ def server_reset():
 class StateMachine:
     def __init__(self, request) -> None:
         self.session = request.session
-        self.state = "not set"
+        self.state = "StandBy"
 
         machine = self.session.get(ttweak_key)
         if not machine:
-            machine = self.session[ttweak_key] = {"state": "start", "strings": []}
+            machine = self.session[ttweak_key] = {"state": "StandBy", "strings": []}
         self.machine = machine
 
-    # start -add-> adding
-    # adding -+string-> adding
-    # adding -+string-> full
+    def __str__(self) -> str:
+        return f"State: {self.get_state()}, Strings: {self.get_strings()}"
 
     def move_state(self, new_state):
         self.state = new_state
+        if "StandBy" == self.state:
+            self.clear_strings()
         self.machine["state"] = self.state
 
     def get_state(self):
@@ -540,35 +549,80 @@ class StateMachine:
     def clear_strings(self):
         self.machine["strings"] = []
 
-    def act(self, command, index=None):
+    def act(self, command, string="", index=None):
+        """
+        @startuml
+
+        StandBy : No strings.
+        StandBy : Waiting for commands.
+        Input : Accepting strings.
+        Query : Returns string per index
+        Error : Exception state:
+        Error : Invalid index.
+
+        Input : String reception mode.
+
+        [*] --> StandBy
+        StandBy --> Input : Command\n"add"
+
+        Input --> StandBy : Command\n"stop"
+        Input --> Input : Command "add" + string\n&&#strings < 5
+        Input --> Input : Command "clear"\n/ Clears strings
+        Input --> Query : Command "add" + string\n&&#strings = 5
+
+        Query --> StandBy : Command\n"stop"
+        Query --> Input : Command\n"clear"
+        Query --> Query : Command "query"\n&& index valid
+        Query --> Error : Command "query"\n&& index invalid
+
+        Error --> StandBy : Command\n"stop"
+        Error --> Input : Command\n"clear"
+        Error --> Query : Command\n"sorry"
+
+        @enduml
+        Paste in: https://www.plantuml.com/plantuml/uml/
+        """
+
         current_state = self.get_state()
-        if "stop" == command or "clear" == command:
-            self.clear_strings()
-            self.move_state("start")
-        if "start" == current_state:
+        if "StandBy" == current_state:
             if "add" == command:
-                self.move_state("adding")
-        elif "adding" == current_state:
-            self.add_string(command)
-            if len(self.get_strings()) >= 5:
-                self.move_state("full")
-        elif "full" == current_state:
+                self.move_state("Input")
+        if "Input" == current_state:
+            if "stop" == command:
+                self.move_state("StandBy")
+            if "clear" == command:
+                self.clear_strings()
+            if "add" == command:
+                if string:
+                    self.add_string(string)
+                if len(self.get_strings()) >= 5:
+                    self.move_state("Query")
+            if "clear" == command:
+                self.clear_strings()
+        if "Query" == current_state:
+            if "stop" == command:
+                self.move_state("StandBy")
+            if "clear" == command:
+                self.clear_strings()
+                self.move_state("Input")
             if "query" == command:
                 if index is not None:
-                    if 0 <= index <= (len(self.get_strings()) - 1):
-                        return self.get_strings()[index]
-                    else:
-                        # TODO: Return Error!
-                        pass
-                else:
-                    # TODO: Return Error!
-                    pass
-        else:
-            # TODO: Return Error!
-            pass
+                    if index.isnumeric():
+                        index = int(index)
+                        if 0 <= index <= (len(self.get_strings()) - 1):
+                            return self.get_strings()[index]
+                self.move_state("Error")
+        if "Error" == current_state:
+            if "stop" == command:
+                self.move_state("StandBy")
+            if "clear" == command:
+                self.clear_strings()
+                self.move_state("Input")
+            if "sorry" == command:
+                self.move_state("Query")
 
-        return self.machine
-        # return "Ok"
+        # return self.machine
+        return "Ok"
 
 
 @app.get("/storage/{command}", response_model=StringOut)
@@ -577,7 +631,8 @@ def storage(
     command: str = Path(
         ..., description="Command for the string storage engine.", max_length=100
     ),
-    index: int = None
+    index: int = None,
+    string: str = None
     # Query(
     #     ...,
     #     default=None,
@@ -586,10 +641,45 @@ def storage(
     #     le=4,
     # ),
 ):
+    """Temporary storage for strings. Can store and retrieve up to 5 strings!
+
+    The storage accepts 4 path commands:
+    - stop
+        - Returns the machine to initial "StandBy" state from any state.
+    - clear
+        - Clears strings stored in memory.
+        - In "Input", "Query" or "Error" states, moves into "Query" state to accept new words.
+    - add
+        - Enters the "Input" state.
+        - In this state, the add command accpets the query parameter string for word to add. Words are truncated to 50 chars.
+        - After 5 words, Input state is replaced by the "Query" state, in which one can query for strings.
+    - query
+        - Retrieves stored strings. The query parameter index determines the string to return.
+        - An invalid string will cause an error and move into "Error" state until state is released by commands "stop", "clear", "error".
+    - sorry
+        - Exits "Error" state back to query state.
+    - state
+        - Displays the internal state of the system without modification
+
+    Examples flow:
+    1. http://127.0.0.1:8000/storage/add
+    1. http://127.0.0.1:8000/storage/add?string=1st_string
+    1. ... (more words)
+    1. http://127.0.0.1:8000/storage/add?string=5st_string
+    1. http://127.0.0.1:8000/storage/query?index=0
+    1. http://127.0.0.1:8000/storage/query?index=9
+    1. http://127.0.0.1:8000/storage/sorry
+    1. http://127.0.0.1:8000/storage/query?index=0
+    1. http://127.0.0.1:8000/storage/stop
+    """
     log_count_history(l=True, h=True, c=True, msg=f"storage {command}", inc=1)
 
     machine = StateMachine(request)
-    return JSONResponse(content={"res": machine.act(command, index)})
+    if "state" == command:
+        return JSONResponse(content={"res": str(machine)})
+    return JSONResponse(
+        content={"res": machine.act(command, string=string[:50], index=index)}
+    )
 
 
 app.add_middleware(SessionMiddleware, secret_key=ttweak_key)
