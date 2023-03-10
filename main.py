@@ -632,7 +632,7 @@ def storage(
         ..., description="Command for the string storage engine.", max_length=100
     ),
     index: int = None,
-    string: str = None
+    string: str = ""
     # Query(
     #     ...,
     #     default=None,
