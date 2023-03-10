@@ -529,7 +529,7 @@ class StateMachine:
         self.machine = machine
 
     def __str__(self) -> str:
-        return f"State: {self.get_state()}, Strings: {", ".join(self.get_strings())}"
+        return f"State: {self.get_state()}, Strings: {', '.join(self.get_strings())}"
 
     def move_state(self, new_state):
         self.state = new_state
