@@ -156,7 +156,7 @@ def get_history():
 
 
 @app.get("/length/{text}", response_model=IntOut)
-def length(text: str = Path(..., description="Text to be measured", max_length=100)):
+def length(text: str = Path(..., description="Text to be measured", max_length=20)):
     """Calculates the length of a text provided.
 
     Return Type: int
@@ -167,7 +167,7 @@ def length(text: str = Path(..., description="Text to be measured", max_length=1
 
 
 @app.get("/reverse/{text}", response_model=StringOut)
-def reverse(text: str = Path(..., description="Text to be reversed", max_length=100)):
+def reverse(text: str = Path(..., description="Text to be reversed", max_length=20)):
     """Reverses the text provided.
 
     Return Type: str
@@ -179,7 +179,7 @@ def reverse(text: str = Path(..., description="Text to be reversed", max_length=
 
 @app.get("/upper/{text}", response_model=StringOut)
 def upper(
-    text: str = Path(..., description="Text to convert to upper case", max_length=100)
+    text: str = Path(..., description="Text to convert to upper case", max_length=20)
 ):
     """Converts a text to all-uppercase.
 
@@ -194,7 +194,7 @@ def upper(
 
 @app.get("/lower/{text}", response_model=StringOut)
 def lower(
-    text: str = Path(..., description="Text to convert to lower case", max_length=100)
+    text: str = Path(..., description="Text to convert to lower case", max_length=20)
 ):
     """Converts a text to all lowercase.
 
@@ -209,7 +209,7 @@ def lower(
 
 @app.get("/mix_case/{text}", response_model=StringOut)
 def mix_case(
-    text: str = Path(..., description="Text to alternate cases", max_length=100)
+    text: str = Path(..., description="Text to alternate cases", max_length=20)
 ):
     """Text will have the case of its letters alternate between lower and upper case.
 
@@ -229,12 +229,12 @@ def find(
     string: str = Path(
         ...,
         description="Larger string to serve as source for the search",
-        max_length=100,
+        max_length=20,
     ),
     sub: str = Path(
         ...,
         description="Smaller string to find within the larger string",
-        max_length=100,
+        max_length=20,
     ),
 ):
     """Finds strings inside strings.
@@ -268,10 +268,10 @@ def substring(
     string: str = Path(
         ...,
         description="A string to extract a slice from.",
-        max_length=100,
+        max_length=20,
     ),
-    start: int = Path(..., description="Where to start the extraction", ge=1, le=100),
-    end: int = Path(..., description="Where to end the extraction", ge=1, le=100),
+    start: int = Path(..., description="Where to start the extraction", ge=1, le=20),
+    end: int = Path(..., description="Where to end the extraction", ge=1, le=20),
 ):
     """Extracts a substring from a larger string.
 
@@ -302,7 +302,7 @@ def password_strength(
     password: str = Path(
         ...,
         description="Your password. *Do not use a real one*, it gets logged and is publicly visible.",
-        max_length=100,
+        max_length=20,
     )
 ):
     """A strength score for passwords between 0 and 10. Is your password strong enough?.
@@ -359,7 +359,7 @@ def counterstring(
     char: str = Path(
         ...,
         description="Character to use as the counterstring measure mark",
-        max_length=100,
+        max_length=20,
     ),
 ):
     """Generates a counterstring, a string that measures itself, and helps you measure software.
@@ -400,7 +400,7 @@ reset_random(random_seed)
 @app.get("/random", response_model=StringOut)
 def rand_str(
     length: int = Query(
-        ..., description="Size of the desired random string", ge=0, le=150
+        ..., description="Size of the desired random string", ge=0, le=20
     )
 ):
     """Generates a random string of desired size.
@@ -444,7 +444,7 @@ def rand_str(
 
 @app.get("/anagrams/{text}", response_model=ListStringOut)
 def anagrams(
-    text: str = Path(..., description="Text to find anagrams for. Fun!", max_length=100)
+    text: str = Path(..., description="Text to find anagrams for. Fun!", max_length=30)
 ):
     """Finds anagrams for the text provided.
 
@@ -634,7 +634,7 @@ class StateMachine:
 def storage(
     request: Request,
     command: str = Path(
-        ..., description="Command for the string storage engine.", max_length=100
+        ..., description="Command for the string storage engine.", max_length=20
     ),
     index: int = None,
     string: str = ""
