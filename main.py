@@ -322,7 +322,9 @@ def password_strength(
     score = 10
 
     # A password should be larger than 12
-    score = len(password) - 2
+    if len(password) < 12:
+        distance = 12 - len(password)
+        score = score - distance
 
     # A password should include upper case letter(s), lower case letter(s), and number(s).
     if not [ord(i) for i in password if 65 <= ord(i) <= 90]:
