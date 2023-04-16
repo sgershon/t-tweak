@@ -312,7 +312,6 @@ def password_strength(
     Rules:
     * A password should be longer than 12 characters. Score is reduced by the distance from the actual length and 12.
     * A password should include at least one upper case letter, one lower case letter, and one number. Score is reduced by 2 for every infraction.
-    * A password shouldn't contain any consecutive letters or numbers. 1 is deducted from score for every infraction.
     * A password shouldn't be the words “password”, "admin" or "root". Violating this rule results in a score of 0.
     * A password shouldn't be the same letter or number repeated for its entire length. This deducts 7 points.
 
@@ -332,13 +331,6 @@ def password_strength(
         score -= 2
     if not [ord(i) for i in password if 48 <= ord(i) <= 57]:
         score -= 2
-
-    # A password shouldn’t contain any consecutive letters or numbers.
-    for i, l in enumerate(password):
-        # BUG: this will reduce score for consecutive ordinal values that cross char groups
-        if i + 1 < len(password):
-            if ord(l) + 1 == ord(password[i + 1]):
-                score -= 1
 
     # A password shouldn’t be the words “password”, "admin" or "root"
     if password in ["password", "admin", "root"]:
