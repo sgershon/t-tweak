@@ -270,8 +270,8 @@ def substring(
         description="A string to extract a slice from.",
         max_length=100,
     ),
-    start: int = Path(..., description="Where to start the extraction", ge=0, le=100),
-    end: int = Path(..., description="Where to end the extraction", ge=0, le=100),
+    start: int = Path(..., description="Where to start the extraction", ge=1, le=100),
+    end: int = Path(..., description="Where to end the extraction", ge=1, le=100),
 ):
     """Extracts a substring from a larger string.
 
@@ -289,7 +289,12 @@ def substring(
             detail=f"Conflict (incompatible start and end)",
         )
 
-    return JSONResponse(content={"res": string[start:end]})
+    # The definition of start/end in the function signature should prevent them from indexing
+    #   outside the array. This protection keeps the function robust in different scenarios.
+    start = max(start, 1)
+    end = max(end, 1)
+
+    return JSONResponse(content={"res": string[start-1:end]})
 
 
 @app.get("/password/{password}", response_model=IntOut)
