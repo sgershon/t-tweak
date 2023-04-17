@@ -310,7 +310,7 @@ def password_strength(
     0 is a weak password, 10 is a strong password.
 
     Rules:
-    * A password should be longer than 12 characters. Score is reduced by the distance from the actual length and 12.
+    * A password should be longer than 12 characters. Score is reduced by the distance from the password length to 12.
     * A password should include at least one upper case letter, one lower case letter, and one number. Score is reduced by 2 for every infraction.
     * A password shouldn't be the words “password”, "admin" or "root". Violating this rule results in a score of 0.
     * A password shouldn't be the same letter or number repeated for its entire length. This deducts 7 points.
@@ -587,6 +587,8 @@ class StateMachine:
         if "StandBy" == current_state:
             if "add" == command:
                 self.move_state("Input")
+                if string:
+                    self.add_string(string)
         elif "Input" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
@@ -609,8 +611,8 @@ class StateMachine:
                 if index is not None:
                     if type(index) == int or index.isnumeric():
                         index = int(index)
-                        if 0 <= index <= (len(self.get_strings()) - 1):
-                            return self.get_strings()[index]
+                        if 1 <= index <= (len(self.get_strings())):
+                            return self.get_strings()[index - 1]
                 self.move_state("Error")
         elif "Error" == current_state:
             if "stop" == command:
@@ -645,23 +647,17 @@ def storage(
 ):
     """Temporary storage for strings. Can store and retrieve up to 5 strings!
 
-    The storage accepts 4 path commands:
+    The storage accepts 5 path commands:
     - stop
-        - Returns the machine to initial "StandBy" state from any state.
+        - Resets the machine.
     - clear
         - Clears strings stored in memory.
-        - In "Input", "Query" or "Error" states, moves into "Query" state to accept new words.
     - add
-        - Enters the "Input" state.
-        - In this state, the add command accpets the query parameter string for word to add. Words are truncated to 50 chars.
-        - After 5 words, Input state is replaced by the "Query" state, in which one can query for strings.
+        - Accepts a query parameter "string" for word to add. Words are truncated to 20 chars. Up to 5 words are accepted.
     - query
-        - Retrieves stored strings. The query parameter index determines the string to return.
-        - An invalid string will cause an error and move into "Error" state until state is released by commands "stop", "clear", "error".
+        - Retrieves stored strings. The query parameter "index" determines the string to return (index int).
     - sorry
-        - Exits "Error" state back to query state.
-    - state
-        - Displays the internal state of the system without modification
+        - On errors, returns the ability to query.
 
     Examples flow:
     1. http://127.0.0.1:8000/storage/add
@@ -673,14 +669,47 @@ def storage(
     1. http://127.0.0.1:8000/storage/sorry
     1. http://127.0.0.1:8000/storage/query?index=0
     1. http://127.0.0.1:8000/storage/stop
+
+    Return type: str
     """
+
+    # The storage accepts 5 path commands:
+    # - stop
+    #     - Returns the machine to initial "StandBy" state from any state.
+    # - clear
+    #     - Clears strings stored in memory.
+    #     - In "Input", "Query" or "Error" states, moves into "Query" state to accept new words.
+    # - add
+    #     - Enters the "Input" state.
+    #     - In this state, the add command accepts a query parameter "string" for word to add. Words are truncated to 20 chars.
+    #     - After 5 words, Input state is replaced by the "Query" state, in which one can query for strings.
+    # - query
+    #     - Retrieves stored strings. The query parameter index determines the string to return.
+    #     - An invalid string will cause an error and move into "Error" state until state is released by commands "stop", "clear", "error".
+    # - sorry
+    #     - Exits "Error" state back to query state.
+
+    # Examples flow:
+    # 1. http://127.0.0.1:8000/storage/add
+    # 1. http://127.0.0.1:8000/storage/add?string=1st_string
+    # 1. ... (more words)
+    # 1. http://127.0.0.1:8000/storage/add?string=5st_string
+    # 1. http://127.0.0.1:8000/storage/query?index=0
+    # 1. http://127.0.0.1:8000/storage/query?index=9
+    # 1. http://127.0.0.1:8000/storage/sorry
+    # 1. http://127.0.0.1:8000/storage/query?index=0
+    # 1. http://127.0.0.1:8000/storage/stop
+
+    # Return type: str
+    # """
+
     log_count_history(l=True, h=True, c=True, msg=f"storage {command}", inc=1)
 
     machine = StateMachine(request)
     if "state" == command:
         return JSONResponse(content={"res": str(machine)})
     return JSONResponse(
-        content={"res": machine.act(command, string=string[:50], index=index)}
+        content={"res": machine.act(command, string=string[:20], index=index)}
     )
 
 
