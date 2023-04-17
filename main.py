@@ -294,7 +294,7 @@ def substring(
     start = max(start, 1)
     end = max(end, 1)
 
-    return JSONResponse(content={"res": string[start-1:end]})
+    return JSONResponse(content={"res": string[start - 1 : end]})
 
 
 @app.get("/password/{password}", response_model=IntOut)
