@@ -565,14 +565,15 @@ class StateMachine:
         StandBy --> Input : Command\n"add"
 
         Input --> StandBy : Command\n"stop"
-        Input --> Input : Command "add" + string\n&&#strings < 5
+        Input --> Input : Command "add" + string\n&& #strings < 5
         Input --> Input : Command "clear"\n/ Clears strings
-        Input --> Query : Command "add" + string\n&&#strings = 5
+        Input --> Query : Command "add" + string\n&& #strings = 5
 
         Query --> StandBy : Command\n"stop"
         Query --> Input : Command\n"clear"
         Query --> Query : Command "query"\n&& index valid
         Query --> Error : Command "query"\n&& index invalid
+        Query --> Error : Command "add"
 
         Error --> StandBy : Command\n"stop"
         Error --> Input : Command\n"clear"
@@ -586,7 +587,7 @@ class StateMachine:
         if "StandBy" == current_state:
             if "add" == command:
                 self.move_state("Input")
-        if "Input" == current_state:
+        elif "Input" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
             if "clear" == command:
@@ -596,22 +597,22 @@ class StateMachine:
                     self.add_string(string)
                 if len(self.get_strings()) >= 5:
                     self.move_state("Query")
-            if "clear" == command:
-                self.clear_strings()
-        if "Query" == current_state:
+        elif "Query" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
             if "clear" == command:
                 self.clear_strings()
                 self.move_state("Input")
+            if "add" == command:
+                self.move_state("Error")
             if "query" == command:
                 if index is not None:
-                    if index.isnumeric():
+                    if type(index) == int or index.isnumeric():
                         index = int(index)
                         if 0 <= index <= (len(self.get_strings()) - 1):
                             return self.get_strings()[index]
                 self.move_state("Error")
-        if "Error" == current_state:
+        elif "Error" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
             if "clear" == command:
@@ -620,8 +621,10 @@ class StateMachine:
             if "sorry" == command:
                 self.move_state("Query")
 
-        # return self.machine
+        if "Error" == self.get_state():
+            return "Error"
         return "Ok"
+        # return self.machine
 
 
 @app.get("/storage/{command}", response_model=StringOut)
