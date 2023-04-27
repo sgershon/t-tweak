@@ -660,15 +660,15 @@ def storage(
         - On errors, returns the ability to query.
 
     Examples flow:
-    1. http://127.0.0.1:8000/storage/add
-    1. http://127.0.0.1:8000/storage/add?string=1st_string
+    1. http://t-tweak.gershon.info/storage/add
+    1. http://t-tweak.gershon.info/storage/add?string=1st_string
     1. ... (more words)
-    1. http://127.0.0.1:8000/storage/add?string=5st_string
-    1. http://127.0.0.1:8000/storage/query?index=0
-    1. http://127.0.0.1:8000/storage/query?index=9
-    1. http://127.0.0.1:8000/storage/sorry
-    1. http://127.0.0.1:8000/storage/query?index=0
-    1. http://127.0.0.1:8000/storage/stop
+    1. http://t-tweak.gershon.info/storage/add?string=5st_string
+    1. http://t-tweak.gershon.info/storage/query?index=0
+    1. http://t-tweak.gershon.info/storage/query?index=9
+    1. http://t-tweak.gershon.info/storage/sorry
+    1. http://t-tweak.gershon.info/storage/query?index=0
+    1. http://t-tweak.gershon.info/storage/stop
 
     Return type: str
     """
@@ -690,15 +690,15 @@ def storage(
     #     - Exits "Error" state back to query state.
 
     # Examples flow:
-    # 1. http://127.0.0.1:8000/storage/add
-    # 1. http://127.0.0.1:8000/storage/add?string=1st_string
+    # 1. http://t-tweak.gershon.info/storage/add
+    # 1. http://t-tweak.gershon.info/storage/add?string=1st_string
     # 1. ... (more words)
-    # 1. http://127.0.0.1:8000/storage/add?string=5st_string
-    # 1. http://127.0.0.1:8000/storage/query?index=0
-    # 1. http://127.0.0.1:8000/storage/query?index=9
-    # 1. http://127.0.0.1:8000/storage/sorry
-    # 1. http://127.0.0.1:8000/storage/query?index=0
-    # 1. http://127.0.0.1:8000/storage/stop
+    # 1. http://t-tweak.gershon.info/storage/add?string=5st_string
+    # 1. http://t-tweak.gershon.info/storage/query?index=0
+    # 1. http://t-tweak.gershon.info/storage/query?index=9
+    # 1. http://t-tweak.gershon.info/storage/sorry
+    # 1. http://t-tweak.gershon.info/storage/query?index=0
+    # 1. http://t-tweak.gershon.info/storage/stop
 
     # Return type: str
     # """
