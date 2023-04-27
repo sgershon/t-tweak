@@ -554,15 +554,14 @@ class StateMachine:
 
         StandBy : No strings.
         StandBy : Waiting for commands.
-        Input : Accepting strings.
+        Input : String reception mode.
         Query : Returns string per index
         Error : Exception state:
         Error : Invalid index.
 
-        Input : String reception mode.
-
         [*] --> StandBy
         StandBy --> Input : Command\n"add"
+        StandBy --> Input : Command\n"add" + string
 
         Input --> StandBy : Command\n"stop"
         Input --> Input : Command "add" + string\n&& #strings < 5
@@ -608,7 +607,7 @@ class StateMachine:
             if "add" == command:
                 self.move_state("Error")
             if "query" == command:
-                if index is not None:
+                if index:
                     if type(index) == int or index.isnumeric():
                         index = int(index)
                         if 1 <= index <= (len(self.get_strings())):
@@ -706,11 +705,12 @@ def storage(
     log_count_history(l=True, h=True, c=True, msg=f"storage {command}", inc=1)
 
     machine = StateMachine(request)
+
     if "state" == command:
         return JSONResponse(content={"res": str(machine)})
-    return JSONResponse(
-        content={"res": machine.act(command, string=string[:20], index=index)}
-    )
+    
+    res = machine.act(command, string=string[:20], index=index)
+    return JSONResponse(content={"res": res})
 
 
 app.add_middleware(SessionMiddleware, secret_key=ttweak_key)
