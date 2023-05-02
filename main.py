@@ -551,6 +551,7 @@ class StateMachine:
     def act(self, command, string="", index=None):
         """
         @startuml
+        left to right direction
 
         StandBy : No strings.
         StandBy : Waiting for commands.
@@ -648,15 +649,17 @@ def storage(
 
     The storage accepts 5 path commands:
     - stop
-        - Resets the machine.
+        - Resets the machine. All strings are deleted.
     - clear
         - Clears strings stored in memory.
     - add
         - Accepts a query parameter "string" for word to add. Words are truncated to 20 chars. Up to 5 words are accepted.
     - query
-        - Retrieves stored strings. The query parameter "index" determines the string to return (index int).
+        - Retrieves stored strings. The query parameter "index" determines the string to return (index accepts an int).
     - sorry
-        - On errors, returns the ability to query.
+        - On errors, restores the ability to query.
+    - state
+        - Returns information about the state of the storage system
 
     Examples flow:
     1. http://t-tweak.gershon.info/storage/add
