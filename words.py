@@ -1,4 +1,7 @@
+""" Linux word dictionary, reformatted into a hash of anagrams. """
+
 words = {}
+
 
 with open("/usr/share/dict/words", "r") as d:
     for w in [word.strip() for word in d.readlines()]:

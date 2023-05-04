@@ -1,5 +1,6 @@
+""" All the t-tweak functions. Called main.py for uvicorn's server standard."""
+
 import os
-import fcntl
 import string
 import random
 import datetime
@@ -10,6 +11,10 @@ from fastapi.responses import Response, JSONResponse, FileResponse, PlainTextRes
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
 
+try:
+    import fcntl
+except ModuleNotFoundError:
+    import win_fctl as fcntl
 
 description = """
 T-Tweak helps you tweak text! 🖉
@@ -47,9 +52,9 @@ class Message(BaseModel):
     detail: str
 
 
-count_file = "count.cnt"
-hist_file = "history.txt"
-log_file = "log.log"
+count_file = "logs/count.cnt"
+hist_file = "logs/history.txt"
+log_file = "logs/log.log"
 
 
 def count(increment=None):
@@ -408,7 +413,7 @@ def rand_str(
     )
 
     # The code below can make every new random to be based on the last random served.
-    # with open("random.txt", "r") as r:
+    # with open("logs/random.txt", "r") as r:
     #     rnd = r.read()
 
     # prefix = []
@@ -426,7 +431,7 @@ def rand_str(
 
     # final_random = prefix + random_string[len(rnd) :]
 
-    # with open("random.txt", "w+") as r:
+    # with open("logs/random.txt", "w+") as r:
     #     fcntl.flock(r, fcntl.LOCK_EX)
     #     r.write(final_random)
     #     fcntl.flock(r, fcntl.LOCK_UN)
@@ -711,7 +716,7 @@ def storage(
 
     if "state" == command:
         return JSONResponse(content={"res": str(machine)})
-    
+
     res = machine.act(command, string=string[:20], index=index)
     return JSONResponse(content={"res": res})
 
