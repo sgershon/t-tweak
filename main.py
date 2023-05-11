@@ -350,9 +350,9 @@ def password_strength(
     return JSONResponse(content={"res": min(max(score, 0), 10)})
 
 
-@app.get("/counterstring/{length}/{char}", response_model=StringOut)
+@app.get("/counterstring/{cs_length}/{char}", response_model=StringOut)
 def counterstring(
-    length: int = Path(
+    cs_length: int = Path(
         ..., description="Size of the desired counterstring", ge=0, le=150
     ),
     char: str = Path(
@@ -368,19 +368,19 @@ def counterstring(
     Return Type: str
     """
     log_count_history(
-        l=True, h=True, c=True, msg=f"counterstring {length} {char}", inc=1
+        l=True, h=True, c=True, msg=f"counterstring {cs_length} {char}", inc=1
     )
 
     # A discussion on counterstring algorithms is available at https://www.eviltester.com/2018/05/counterstring-algorithms.html
     # This implementation is copied from https://github.com/deefex/pyclip/blob/master/pyclip/counterstring.py
     counterstring = ""
 
-    while length > 0:
-        next_count = char + str(length)[::-1]
-        if len(next_count) > length:
-            next_count = next_count[:length]
+    while cs_length > 0:
+        next_count = char + str(cs_length)[::-1]
+        if len(next_count) > cs_length:
+            next_count = next_count[:cs_length]
         counterstring = counterstring + next_count
-        length -= len(next_count)
+        cs_length -= len(next_count)
 
     counterstring = counterstring[::-1]
 
@@ -396,6 +396,9 @@ random_seed = 5
 reset_random(random_seed)
 
 
+def get_rand_char():
+    return random.choice(string.ascii_letters + string.digits)
+
 @app.get("/random", response_model=StringOut)
 def rand_str(
     length: int = Query(
@@ -408,33 +411,7 @@ def rand_str(
     """
     log_count_history(l=False, h=True, c=True, msg=f"random {length}", inc=1)
 
-    random_string = "".join(
-        random.choices(string.ascii_letters + string.digits, k=length)
-    )
-
-    # The code below can make every new random to be based on the last random served.
-    # with open("logs/random.txt", "r") as r:
-    #     rnd = r.read()
-
-    # prefix = []
-    # for letter in rnd:
-    #     ordinal = ord(letter) + 1
-    #     if ord(letter) == 122:
-    #         ordinal = 97
-    #     if ord(letter) == 90:
-    #         ordinal = 65
-    #     if ord(letter) == 57:
-    #         ordinal = 48
-    #     prefix.append(chr(ordinal))
-
-    # prefix = "".join(prefix)[:length]
-
-    # final_random = prefix + random_string[len(rnd) :]
-
-    # with open("logs/random.txt", "w+") as r:
-    #     fcntl.flock(r, fcntl.LOCK_EX)
-    #     r.write(final_random)
-    #     fcntl.flock(r, fcntl.LOCK_UN)
+    random_string = "".join([get_rand_char() for i in range(length)])
 
     log(f"random {length} {random_string}")
 
@@ -467,6 +444,10 @@ def anagrams(
     return JSONResponse(content={"res": anagrams})
 
 
+def get_network_time():
+    return datetime.datetime.now()
+
+
 @app.get(
     "/time",
     responses={203: {"model": Message, "description": "Non Authoritative Information"}},
@@ -484,7 +465,9 @@ def server_time():
         detail=f"{datetime.datetime.now().strftime('%c')}",
     )
 
-    return JSONResponse(content={"res": f"{datetime.datetime.now().strftime('%c')}"})
+    net_time = get_network_time()
+
+    return JSONResponse(content={"res": f"{net_time.strftime('%c')}"})
 
 
 @app.get("/reset_server", response_model=StringOut)
