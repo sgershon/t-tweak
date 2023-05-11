@@ -399,6 +399,7 @@ reset_random(random_seed)
 def get_rand_char():
     return random.choice(string.ascii_letters + string.digits)
 
+
 @app.get("/random", response_model=StringOut)
 def rand_str(
     length: int = Query(

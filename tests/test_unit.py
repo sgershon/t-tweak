@@ -38,4 +38,3 @@ def test_random(monkeypatch):
     j = json.loads(r.body)
     assert r.status_code == 200
     assert j["res"] == "tttt"
-
