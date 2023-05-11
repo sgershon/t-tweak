@@ -3,3 +3,4 @@ fastapi
 starlette
 pydantic
 itsdangerous
+requests
