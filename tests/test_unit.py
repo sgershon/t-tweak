@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 import json
 
@@ -30,6 +31,22 @@ def test_upper_many(test, expected):
     j = json.loads(r.body)
     assert r.status_code == 200
     assert j["res"] == expected
+
+
+def test_password_length_score():
+    password = "".join(random.choices("abcXYZ123!@#", k=20))
+
+    while len(password) >= 1:
+        r_large = main.password_strength(password)
+        j_large = json.loads(r_large.body)
+
+        password = password[:-1]
+        r_small = main.password_strength(password)
+        j_small = json.loads(r_small.body)
+
+        assert 200 == r_large.status_code
+        assert 200 == r_small.status_code
+        assert j_large["res"] >= j_small["res"]
 
 
 def test_random(monkeypatch):
