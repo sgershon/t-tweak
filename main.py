@@ -121,7 +121,7 @@ def status():
     Return Type: str"""
     log("root")
 
-    return JSONResponse(content={"Status": "Operational"})
+    return JSONResponse(content={"res": "Operational"})
 
 
 @app.get("/robots.txt", include_in_schema=False)

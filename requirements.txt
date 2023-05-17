@@ -4,3 +4,4 @@ starlette
 pydantic
 itsdangerous
 requests
+httpx
