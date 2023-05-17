@@ -3,6 +3,7 @@
 import os
 import sys
 import json
+import random
 
 import fastapi.exceptions
 import pytest
@@ -67,7 +68,27 @@ def test_lower_ABCD():
 
 
 # ---------------------------------------------------------------------------
-# TEST 2: Transform to uppercase a number of strings. Still simple, notice how
+# TEST 2: Tests can be longer and/or consist of many checks.
+# Amounts to 1 test in the total unit tests
+# ---------------------------------------------------------------------------
+def test_password_length_score():
+    password = "".join(random.choices("abcXYZ123!@#", k=20))
+
+    while len(password) >= 1:
+        r_large = main.password_strength(password)
+        j_large = json.loads(r_large.body)
+
+        password = password[:-1]
+        r_small = main.password_strength(password)
+        j_small = json.loads(r_small.body)
+
+        assert 200 == r_large.status_code
+        assert 200 == r_small.status_code
+        assert j_large["res"] >= j_small["res"]
+
+
+# ---------------------------------------------------------------------------
+# TEST 3: Transform to uppercase a number of strings. Still simple, notice how
 #   the framework allows to perform one test on multiple variables without
 #   repeating the test.
 # Amounts to 7 tests in the total unit tests
@@ -93,7 +114,7 @@ def test_upper_many(test, expected):
 
 
 # ---------------------------------------------------------------------------
-# TEST 3: T-Tweak has our tweak functions (units) running on top of a web server
+# TEST 4: T-Tweak has our tweak functions (units) running on top of a web server
 #   that has specific configurations to deal with the user input (so it's another unit).
 #   Luckily fastapi let's us separate that unit as well with a dummy server.
 # Amounts to 1 test in the total unit tests
@@ -105,7 +126,7 @@ def test_upper_rest_within_bv():
 
 
 # ---------------------------------------------------------------------------
-# TEST 4: Using the dummy server, for negative tests.
+# TEST 5: Using the dummy server, for negative tests.
 # Amounts to 1 test in the total unit tests
 # ---------------------------------------------------------------------------
 def test_upper_rest_outside_bv():
@@ -136,7 +157,7 @@ def test_random_naive():
     assert j["res"] == "Acq9GFz6Y1t9EwL"
 
 # ---------------------------------------------------------------------------
-# TEST 6: For functions with complex dependencies.
+# TEST 7: For functions with complex dependencies.
 #   We can create a stub of the dependencies, replacing it with a fake function
 #       of our own. Then we have full control.
 # Amounts to 1 tests in the total unit tests
@@ -146,23 +167,6 @@ def test_random_naive():
     [1, 10, 20, 50],
 )
 def test_random_unit(monkeypatch, length):
-def test_password_length_score():
-    password = "".join(random.choices("abcXYZ123!@#", k=20))
-
-    while len(password) >= 1:
-        r_large = main.password_strength(password)
-        j_large = json.loads(r_large.body)
-
-        password = password[:-1]
-        r_small = main.password_strength(password)
-        j_small = json.loads(r_small.body)
-
-        assert 200 == r_large.status_code
-        assert 200 == r_small.status_code
-        assert j_large["res"] >= j_small["res"]
-
-
-def test_random(monkeypatch):
     monkeypatch.setattr(main, "get_rand_char", lambda: "t")
     r = main.rand_str(length)
     j = json.loads(r.body)
@@ -171,7 +175,7 @@ def test_random(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# TEST 6: T-Tweak functions also throw exceptions when something is not right
+# TEST 8: T-Tweak functions also throw exceptions when something is not right
 #   (for example, when we need to send a different HTTP status). We have to
 #   test that too! Unit Test frameworks allow the test to expect a specific
 #   Exception. Useful, uh?
@@ -184,7 +188,7 @@ def test_with_exception():
 
 
 # ---------------------------------------------------------------------------
-# TEST 7: Unit test frameworks allow setting conditions to skip tests.
+# TEST 9: Unit test frameworks allow setting conditions to skip tests.
 #   Sometimes a test may be suitable for a platform but not another, for a version
 #   but not another, etc.
 # Amounts to 1 test in the total unit tests
