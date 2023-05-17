@@ -16,6 +16,7 @@ import main
 # Client that gives us access to a dummy server for HTTP tests
 client = None
 
+
 # ---------------------------------------------------------------------------
 # Setup and Teardown functions.
 # These are examples of the functions used by pytest to prepare and dismantle
@@ -28,31 +29,32 @@ client = None
 #   --capture=no (as in pytest -v --capture=no)
 # ---------------------------------------------------------------------------
 def setup_module(module):
-    print('\n==> THIS WILL HAPPEN *before all* THE TESTS BEGIN')
+    print("\n==> THIS WILL HAPPEN *before all* THE TESTS BEGIN")
     # For example, copy test data into the test suite
     # For example, set a dummy server running (like the TestClient)
-    print('==> START!')
+    print("==> START!")
 
     global client
     client = TestClient(main.app)
 
+
 def teardown_module(module):
-    print('\n==> THIS WILL HAPPEN *after all* THE TESTS END')
+    print("\n==> THIS WILL HAPPEN *after all* THE TESTS END")
     # For example, delete test files and output files
-    print('==> FINISH!')
+    print("==> FINISH!")
 
     global client
     client = None
 
 
 def setup_function():
-    print('\n--> This will happen BEFORE each one of the tests begin')
+    print("\n--> This will happen BEFORE each one of the tests begin")
     # For example, cleanup temp files
     # For example, get information on resources available
 
 
 def teardown_function():
-    print('\n--> This will happen AFTER each one of the tests ends')
+    print("\n--> This will happen AFTER each one of the tests ends")
     # For example, release handles
 
 
@@ -104,7 +106,15 @@ def test_password_length_score():
         ("3", "3"),
         ("abc#$%def", "ABC#$%DEF"),
     ],
-    ids=["empty", "single letter", "10 chars", "20 chars", "long string", "digit", "special chars"],
+    ids=[
+        "empty",
+        "single letter",
+        "10 chars",
+        "20 chars",
+        "long string",
+        "digit",
+        "special chars",
+    ],
 )
 def test_upper_many(test, expected):
     r = main.upper(test)
@@ -156,6 +166,7 @@ def test_random_naive():
     assert r.status_code == 200
     assert j["res"] == "Acq9GFz6Y1t9EwL"
 
+
 # ---------------------------------------------------------------------------
 # TEST 7: For functions with complex dependencies.
 #   We can create a stub of the dependencies, replacing it with a fake function
@@ -171,7 +182,7 @@ def test_random_unit(monkeypatch, length):
     r = main.rand_str(length)
     j = json.loads(r.body)
     assert r.status_code == 200
-    assert j["res"] == "t"*length
+    assert j["res"] == "t" * length
 
 
 # ---------------------------------------------------------------------------
