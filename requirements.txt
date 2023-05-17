@@ -5,3 +5,4 @@ pydantic
 itsdangerous
 requests
 httpx
+pytest-cov

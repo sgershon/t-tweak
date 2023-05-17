@@ -8,6 +8,7 @@ import random
 import fastapi.exceptions
 import pytest
 from fastapi.testclient import TestClient
+from fastapi import status as http_status
 
 # Makes it easier to run in students' Windows's laptops, with no need to set path vars
 sys.path.append(os.path.dirname(os.path.abspath(__name__)))
@@ -138,6 +139,8 @@ def test_upper_rest_within_bv():
 # ---------------------------------------------------------------------------
 # TEST 5: Using the dummy server, for negative tests.
 # Amounts to 1 test in the total unit tests
+# 404: Page not found
+# 422: Unprocessable Entity
 # ---------------------------------------------------------------------------
 def test_upper_rest_outside_bv():
     r = client.get("upper")
@@ -190,12 +193,14 @@ def test_random_unit(monkeypatch, length):
 #   (for example, when we need to send a different HTTP status). We have to
 #   test that too! Unit Test frameworks allow the test to expect a specific
 #   Exception. Useful, uh?
+# 409: Conflict
 # Amounts to 1 test in the total unit tests
 # ---------------------------------------------------------------------------
 def test_with_exception():
     # 'raises' checks that the exception is raised
-    with pytest.raises(fastapi.exceptions.HTTPException):
+    with pytest.raises(fastapi.exceptions.HTTPException) as exc:
         main.substring("course 67778", 3, 2)
+    assert http_status.HTTP_409_CONFLICT == exc.value.status_code
 
 
 # ---------------------------------------------------------------------------
