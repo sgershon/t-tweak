@@ -28,6 +28,7 @@ app = FastAPI(
     contact={
         "name": "67778 Course",
     },
+    swagger_ui_parameters={"defaultModelsExpandDepth": -1},
 )
 ttweak_key = "neverimagineyourselftobe"
 

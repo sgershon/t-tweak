@@ -146,6 +146,23 @@ def test_random_naive():
     [1, 10, 20, 50],
 )
 def test_random_unit(monkeypatch, length):
+def test_password_length_score():
+    password = "".join(random.choices("abcXYZ123!@#", k=20))
+
+    while len(password) >= 1:
+        r_large = main.password_strength(password)
+        j_large = json.loads(r_large.body)
+
+        password = password[:-1]
+        r_small = main.password_strength(password)
+        j_small = json.loads(r_small.body)
+
+        assert 200 == r_large.status_code
+        assert 200 == r_small.status_code
+        assert j_large["res"] >= j_small["res"]
+
+
+def test_random(monkeypatch):
     monkeypatch.setattr(main, "get_rand_char", lambda: "t")
     r = main.rand_str(length)
     j = json.loads(r.body)
