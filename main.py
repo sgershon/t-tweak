@@ -1,16 +1,20 @@
-""" All the t-tweak functions. Called main.py for uvicorn's server standard."""
+""" All the t-tweak functions. Called "main" to fit most uvicorn's server standard tutorials."""
 
 import os
-import string
-import random
 import datetime
 from typing import List
 
 from fastapi import FastAPI, Path, Query, HTTPException, status as http_status, Request
-from fastapi.responses import Response, JSONResponse, FileResponse, PlainTextResponse
+from fastapi.responses import Response, JSONResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
 
+# The "extra" module is for external functions that are considered out of the programmer's control.
+import extra
+
+# "fcntl" is a linux module, important to control file access in a multi-client web server.
+#   In Windows it doesn't exist, and for students to run locally we invented a mock for
+#   the module. Adds but a tiny risk of concomitant write to logs, a non issue.
 try:
     import fcntl
 except ModuleNotFoundError:
@@ -30,7 +34,14 @@ app = FastAPI(
     },
     swagger_ui_parameters={"defaultModelsExpandDepth": -1},
 )
-ttweak_key = "neverimagineyourselftobe"
+ttweak_key = "course67778isthebestinhuji"
+
+random_seed = 5
+extra.reset_random(random_seed)
+
+
+# ## ### ### ### ###
+# Classes used to model de data structures for the REST responses.
 
 
 class StringOut(BaseModel):
@@ -52,6 +63,9 @@ class ListIntOut(BaseModel):
 class Message(BaseModel):
     detail: str
 
+
+# ## ### ### ### ###
+# Logging files and the functions that fill them
 
 count_file = "logs/count.cnt"
 hist_file = "logs/history.txt"
@@ -100,9 +114,6 @@ def log(msg):
             fcntl.flock(l, fcntl.LOCK_UN)
 
 
-log("Starting T-Tweak")
-
-
 def log_count_history(l=True, h=True, c=True, **kwargs):
     msg = kwargs.get("msg", None)
     if msg:
@@ -113,6 +124,12 @@ def log_count_history(l=True, h=True, c=True, **kwargs):
     inc = kwargs.get("inc", None)
     if c:
         count(inc)
+
+
+# ## ### ### ### ###
+# REST Functions and their responses
+
+log("Starting T-Tweak")
 
 
 @app.get("/", response_model=StringOut)
@@ -281,7 +298,7 @@ def substring(
 ):
     """Extracts a substring from a larger string.
 
-    Returns the resultign string based on the start and end positions (index starts at 0).
+    Returns the resulting string based on the start and end positions (index starts at 0).
 
     Return Type: str
     """
@@ -317,7 +334,8 @@ def password_strength(
 
     Rules:
     * A password should be longer than 12 characters. Score is reduced by the distance from the password length to 12.
-    * A password should include at least one upper case letter, one lower case letter, and one number. Score is reduced by 2 for every infraction.
+    * A password should include at least one upper case letter, one lower case letter, and one number. Score is reduced
+    *   by 2 for every infraction.
     * A password shouldn't be the words “password”, "admin" or "root". Violating this rule results in a score of 0.
     * A password shouldn't be the same letter or number repeated for its entire length. This deducts 7 points.
 
@@ -340,11 +358,11 @@ def password_strength(
     if not [ord(i) for i in password if 48 <= ord(i) <= 57]:
         score -= 2
 
-    # A password shouldn’t be the words “password”, "admin" or "root"
+    # A password should NOT be the words “password”, "admin" or "root"
     if password in ["password", "admin", "root"]:
         score = 0
 
-    # A password shouldn’t be the same letter or number repeated
+    # A password should NOT be the same letter or number repeated
     if len(set(password)) <= 1:
         score -= 7
 
@@ -372,33 +390,20 @@ def counterstring(
         l=True, h=True, c=True, msg=f"counterstring {cs_length} {char}", inc=1
     )
 
-    # A discussion on counterstring algorithms is available at https://www.eviltester.com/2018/05/counterstring-algorithms.html
+    # Discussion on counterstring algorithms available at https://www.eviltester.com/2018/05/counterstring-algorithms.html
     # This implementation is copied from https://github.com/deefex/pyclip/blob/master/pyclip/counterstring.py
-    counterstring = ""
+    the_counterstring = ""
 
     while cs_length > 0:
         next_count = char + str(cs_length)[::-1]
         if len(next_count) > cs_length:
             next_count = next_count[:cs_length]
-        counterstring = counterstring + next_count
+        the_counterstring = the_counterstring + next_count
         cs_length -= len(next_count)
 
-    counterstring = counterstring[::-1]
+    the_counterstring = the_counterstring[::-1]
 
-    return JSONResponse(content={"res": counterstring})
-
-
-def reset_random(seed):
-    log(f"Setting seed {seed}")
-    random.seed(seed)
-
-
-random_seed = 5
-reset_random(random_seed)
-
-
-def get_rand_char():
-    return random.choice(string.ascii_letters + string.digits)
+    return JSONResponse(content={"res": the_counterstring})
 
 
 @app.get("/random", response_model=StringOut)
@@ -413,7 +418,7 @@ def rand_str(
     """
     log_count_history(l=False, h=True, c=True, msg=f"random {length}", inc=1)
 
-    random_string = "".join([get_rand_char() for i in range(length)])
+    random_string = "".join([extra.get_rand_char() for i in range(length)])
 
     log(f"random {length} {random_string}")
 
@@ -426,7 +431,7 @@ def anagrams(
 ):
     """Finds anagrams for the text provided.
 
-    If more than one anagram is found, all of the anagrams are returned within a list.
+    If more than one anagram is found, all the anagrams are returned within a list.
 
     Return Type: list[str]
     """
@@ -438,16 +443,13 @@ def anagrams(
 
     text = text.lower()
     key = "".join(sorted(text))
-    anagrams = all_words.get(key, []).copy()
+    anagrams_found = all_words.get(key, []).copy()
 
-    if text in anagrams:
-        anagrams.remove(text)
+    # A word is always an anagram of itself, so it doesn't count
+    if text in anagrams_found:
+        anagrams_found.remove(text)
 
-    return JSONResponse(content={"res": anagrams})
-
-
-def get_network_time():
-    return datetime.datetime.now()
+    return JSONResponse(content={"res": anagrams_found})
 
 
 @app.get(
@@ -456,20 +458,18 @@ def get_network_time():
     response_model=Message,
 )
 def server_time():
-    """Retrieves the server time. For debug purposes.
+    """Retrieves the server time. For debug purposes (actually, for didactic ones).
 
     Return Type: str
     """
     log_count_history(l=True, h=True, c=True, msg=f"server_time", inc=1)
 
+    net_time = extra.get_network_time()
+
     raise HTTPException(
         status_code=http_status.HTTP_203_NON_AUTHORITATIVE_INFORMATION,
-        detail=f"{datetime.datetime.now().strftime('%c')}",
+        detail=f"{net_time.strftime('%c')}",
     )
-
-    net_time = get_network_time()
-
-    return JSONResponse(content={"res": f"{net_time.strftime('%c')}"})
 
 
 @app.get("/reset_server", response_model=StringOut)
@@ -481,11 +481,7 @@ def server_reset(
     Return Type: str
     """
 
-    # Let's leave the log intact on reset
-    # with open(log_file, "w") as l:
-    #     fcntl.flock(l, fcntl.LOCK_EX)
-    #     l.write("")
-    #     fcntl.flock(l, fcntl.LOCK_UN)
+    # We reset history and count, but leave the log intact
 
     with open(count_file, "w") as c:
         fcntl.flock(c, fcntl.LOCK_EX)
@@ -497,8 +493,11 @@ def server_reset(
         h.write("")
         fcntl.flock(h, fcntl.LOCK_UN)
 
-    reset_random(random_seed)
+    # Reset also the random seed (results should repeat) and
+    extra.reset_random(random_seed)
+    log(f"Setting seed {random_seed}")
 
+    # Reset and clear the storage
     machine = StateMachine(request)
     machine.act(command="stop")
 
@@ -530,13 +529,13 @@ class StateMachine:
         return self.machine["state"]
 
     def add_string(self, string):
-        self.machine["strings"].append(string)
+        extra.update_db(self.machine["strings"], string)
 
     def get_strings(self):
-        return self.machine["strings"]
+        return extra.read_db(self.machine["strings"])
 
     def clear_strings(self):
-        self.machine["strings"] = []
+        extra.update_db(self.machine["strings"], None)
 
     def act(self, command, string="", index=None):
         """
@@ -603,7 +602,7 @@ class StateMachine:
                         index = int(index)
                         if 1 <= index <= (len(self.get_strings())):
                             return self.get_strings()[index - 1]
-                self.move_state("Error")
+                    self.move_state("Error")
         elif "Error" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
@@ -626,14 +625,7 @@ def storage(
         ..., description="Command for the string storage engine.", max_length=20
     ),
     index: int = None,
-    string: str = ""
-    # Query(
-    #     ...,
-    #     default=None,
-    #     description="Index of word to retrieve from the 5 collected (0-4)",
-    #     ge=0,
-    #     le=4,
-    # ),
+    string: str = "",
 ):
     """Temporary storage for strings. Can store and retrieve up to 5 strings!
 
@@ -643,7 +635,7 @@ def storage(
     - clear
         - Clears strings stored in memory.
     - add
-        - Accepts a query parameter "string" for word to add. Words are truncated to 20 chars. Up to 5 words are accepted.
+        - Accepts a query parameter "string" for word to add. Words are truncated to 20 chars. Up to 5 words accepted.
     - query
         - Retrieves stored strings. The query parameter "index" determines the string to return (index accepts an int).
     - sorry
@@ -664,36 +656,6 @@ def storage(
 
     Return type: str
     """
-
-    # The storage accepts 5 path commands:
-    # - stop
-    #     - Returns the machine to initial "StandBy" state from any state.
-    # - clear
-    #     - Clears strings stored in memory.
-    #     - In "Input", "Query" or "Error" states, moves into "Query" state to accept new words.
-    # - add
-    #     - Enters the "Input" state.
-    #     - In this state, the add command accepts a query parameter "string" for word to add. Words are truncated to 20 chars.
-    #     - After 5 words, Input state is replaced by the "Query" state, in which one can query for strings.
-    # - query
-    #     - Retrieves stored strings. The query parameter index determines the string to return.
-    #     - An invalid string will cause an error and move into "Error" state until state is released by commands "stop", "clear", "error".
-    # - sorry
-    #     - Exits "Error" state back to query state.
-
-    # Examples flow:
-    # 1. http://t-tweak.gershon.info/storage/add
-    # 1. http://t-tweak.gershon.info/storage/add?string=1st_string
-    # 1. ... (more words)
-    # 1. http://t-tweak.gershon.info/storage/add?string=5st_string
-    # 1. http://t-tweak.gershon.info/storage/query?index=0
-    # 1. http://t-tweak.gershon.info/storage/query?index=9
-    # 1. http://t-tweak.gershon.info/storage/sorry
-    # 1. http://t-tweak.gershon.info/storage/query?index=0
-    # 1. http://t-tweak.gershon.info/storage/stop
-
-    # Return type: str
-    # """
 
     log_count_history(l=True, h=True, c=True, msg=f"storage {command}", inc=1)
 

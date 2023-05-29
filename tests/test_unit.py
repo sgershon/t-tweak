@@ -4,15 +4,18 @@ import os
 import sys
 import json
 import random
+import datetime
 
 import fastapi.exceptions
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import status as http_status
 
+
 # Makes it easier to run in students' Windows's laptops, with no need to set path vars
 sys.path.append(os.path.dirname(os.path.abspath(__name__)))
 import main
+import extra
 
 # Client that gives us access to a dummy server for HTTP tests
 client = None
@@ -156,7 +159,7 @@ def test_upper_rest_outside_bv():
 # Amounts to 1 tests in the total unit tests
 # ---------------------------------------------------------------------------
 def test_random_naive():
-    main.reset_random(0)
+    extra.reset_random(0)
     r = main.rand_str(4)
     j = json.loads(r.body)
 
@@ -181,7 +184,7 @@ def test_random_naive():
     [1, 10, 20, 50],
 )
 def test_random_unit(monkeypatch, length):
-    monkeypatch.setattr(main, "get_rand_char", lambda: "t")
+    monkeypatch.setattr(main.extra, "get_rand_char", lambda: "t")
     r = main.rand_str(length)
     j = json.loads(r.body)
     assert r.status_code == 200
@@ -213,3 +216,64 @@ def test_with_exception():
 def test_root_status():
     r = client.get("/")
     assert "Operational" == r.json()["res"]
+
+
+# ---------------------------------------------------------------------------
+# TEST 10: test_anagram
+# Test the anagram function. You can write many Chose tests that cover ____.
+# ---------------------------------------------------------------------------
+def test_anagram():
+    assert True
+
+
+# ---------------------------------------------------------------------------
+# TEST 11: test_sever_time
+#   Test the weekday calculation of server_time function.
+#       Test the function main.server_time() directly, not through the TestClient.
+#   Use parameters, a single function should result in 7 tests, one for
+#       each of the 7 days of the week.
+#   Hint: You will need to use:
+#       "parametrize" with the test and the expected result,
+#       "monkeypatch" to overwrite the function in "extra" that provides time info
+#       "pytest.raises" because the function works by throwing a 203 exception
+# ---------------------------------------------------------------------------
+def test_sever_time():
+    assert True
+
+# ---------------------------------------------------------------------------
+# TEST 12: test_sever_time_client
+#   Test the weekday calculation of the client's "/time" REST call.
+#   Use parameters, a single function should result in 7 tests, one for
+#       each of the 7 days of the week.
+#   Hints: You will need to use:
+#       "parametrize" with the test and the expected result,
+#       "monkeypatch" to overwrite the function in "extra" that provides time info
+#       "pytest.raises" because the function works by throwing a 203 exception
+#       fastapi's "TestClient" to run the REST API via a client and avoid the exception.
+# ---------------------------------------------------------------------------
+def test_sever_time_client():
+    assert True
+
+# ---------------------------------------------------------------------------
+# TEST 13: test_storage_db
+#   Test the DB update function of the storage function: StateMachine.add_string()
+#   You are looking to test that when "/storage/add?string=qwert" is called,
+#       StateMachine.add_string() calls extra.update_db() correctly.
+#   Checking that "/storage/query?index=1" is not enough, and it doesn't check
+#       the extra.update_db() call.
+#   Hint: You will need to use:
+#       "monkeypatch" to overwrite the update_db function in "extra".
+#       fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
+#       a function you invent that will mock update_db and update a flag for pass/fail (can be global)
+# ---------------------------------------------------------------------------
+def test_storage_db():
+    assert True
+
+# ---------------------------------------------------------------------------
+# TEST 14: Test the storage function until it reaches 100% statement coverage.
+#   Check coverage with coverage -m pytest
+#   Hint: You will need to use:
+#       fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
+# ---------------------------------------------------------------------------
+def test_storage():
+    assert True
