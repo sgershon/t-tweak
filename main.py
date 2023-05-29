@@ -442,6 +442,8 @@ def anagrams(
     all_words = words.words.copy()
 
     text = text.lower()
+    text = text.strip()
+    text = text.replace(" ", "")
     key = "".join(sorted(text))
     anagrams_found = all_words.get(key, []).copy()
 
