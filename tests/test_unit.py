@@ -219,37 +219,49 @@ def test_root_status():
 
 
 # ---------------------------------------------------------------------------
-# TEST 10: test_anagram
-# Test the anagram function. You can write many Chose tests that cover ____.
+# TEST 10: test_password_ec
+# Automate the tests for equivalence classes of password function. The list of equivalence
+#   partitions and sample values is given in the exercise document.
+# The tests will reach 100% statement coverage of the password_strength function.
 # ---------------------------------------------------------------------------
-def test_anagram():
+def test_password_ec():
     assert True
 
 
 # ---------------------------------------------------------------------------
 # TEST 11: test_sever_time
-#   Test the weekday calculation of server_time function.
-#       Test the function main.server_time() directly, not through the TestClient.
+#   Test the weekday calculation of server_time function: It returns a string that
+#       includes a weekday ("Mon", "Tue"...) that is calculated based on the result
+#       of get_network_time. We want to know it calculates the weekday correctly,
+#       without waiting 1 day between tests. You need to stub get_network_time.
+#       In this implementation, test the function main.server_time() directly,
+#           not through the TestClient.
 #   Use parameters, a single function should result in 7 tests, one for
 #       each of the 7 days of the week.
 #   Hint: You will need to use:
-#       "parametrize" with the test and the expected result,
-#       "monkeypatch" to overwrite the function in "extra" that provides time info
-#       "pytest.raises" because the function works by throwing a 203 exception
+#       - "parametrize" with the test and the expected result,
+#       - "monkeypatch" to overwrite the function in "extra" that provides time info
+#       - "pytest.raises" because the function works by throwing a 203 exception
+#   203: Non-Authoritative Information
 # ---------------------------------------------------------------------------
 def test_sever_time():
     assert True
 
 # ---------------------------------------------------------------------------
 # TEST 12: test_sever_time_client
-#   Test the weekday calculation of the client's "/time" REST call.
-#   Use parameters, a single function should result in 7 tests, one for
-#       each of the 7 days of the week.
-#   Hints: You will need to use:
-#       "parametrize" with the test and the expected result,
-#       "monkeypatch" to overwrite the function in "extra" that provides time info
-#       "pytest.raises" because the function works by throwing a 203 exception
-#       fastapi's "TestClient" to run the REST API via a client and avoid the exception.
+#   Test the weekday calculation of the "/time" REST call. You still need to
+#       stub get_network_time.
+#       In this implementation, test through the TestClient for easier code flow,
+#           not by calling main.server_time() directly.
+#
+#   Instead of parametrizing, use metamorphic tests: For today's date (you don't need
+#       to know which date or day it is), test that whatever weekday it received, the
+#       following days (try the next 100) are of a weekday that is appropriate.
+#   Hint: You will need to use:
+#       - "monkeypatch" to overwrite the function in "extra" that provides time info
+#       - fastapi's "TestClient" to run the REST API via a client and avoid the exception.
+#       - a large loop and a smart way to check the weekday
+#   203: Non-Authoritative Information
 # ---------------------------------------------------------------------------
 def test_sever_time_client():
     assert True
@@ -262,18 +274,18 @@ def test_sever_time_client():
 #   Checking that "/storage/query?index=1" is not enough, and it doesn't check
 #       the extra.update_db() call.
 #   Hint: You will need to use:
-#       "monkeypatch" to overwrite the update_db function in "extra".
-#       fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
-#       a function you invent that will mock update_db and update a flag for pass/fail (can be global)
+#       - "monkeypatch" to overwrite the update_db function in "extra".
+#       - fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
+#       - A function you invent that will mock update_db and update a flag for pass/fail (can be global)
 # ---------------------------------------------------------------------------
 def test_storage_db():
     assert True
 
 # ---------------------------------------------------------------------------
 # TEST 14: Test the storage function until it reaches 100% statement coverage.
-#   Check coverage with coverage -m pytest
-#   Hint: You will need to use:
-#       fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
+#   Check coverage with "coverage run -m pytest"
+#   Hint: It is recommended to use:
+#       - fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
 # ---------------------------------------------------------------------------
 def test_storage():
     assert True
