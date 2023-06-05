@@ -247,6 +247,7 @@ def test_password_ec():
 def test_sever_time():
     assert True
 
+
 # ---------------------------------------------------------------------------
 # TEST 12: test_sever_time_client
 #   Test the weekday calculation of the "/time" REST call. You still need to
@@ -266,6 +267,7 @@ def test_sever_time():
 def test_sever_time_client():
     assert True
 
+
 # ---------------------------------------------------------------------------
 # TEST 13: test_storage_db
 #   Test the DB update function of the storage function: StateMachine.add_string()
@@ -281,9 +283,13 @@ def test_sever_time_client():
 def test_storage_db():
     assert True
 
+
 # ---------------------------------------------------------------------------
-# TEST 14: Test the storage function until it reaches 100% statement coverage.
-#   Check coverage with "coverage run -m pytest"
+# TEST 14: Test the storage functions until it reaches 100% statement coverage.
+#   That is, coverage of the "def storage" function and of all functions
+#       within "class StateMachine".
+#
+#   Check coverage with the command "coverage run -m pytest"
 #   Hint: It is recommended to use:
 #       - fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
 # ---------------------------------------------------------------------------

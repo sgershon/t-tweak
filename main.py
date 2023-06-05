@@ -569,9 +569,7 @@ class StateMachine:
         Error --> StandBy : Command\n"stop"
         Error --> Input : Command\n"clear"
         Error --> Query : Command\n"sorry"
-
         @enduml
-        Paste in: https://www.plantuml.com/plantuml/uml/
         """
 
         current_state = self.get_state()
