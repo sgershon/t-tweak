@@ -234,7 +234,7 @@ def test_password_ec():
 
 
 # ---------------------------------------------------------------------------
-# TEST 11: test_sever_time
+# TEST 11: test_server_time
 #   Test the weekday calculation of server_time function: It returns a string that
 #       includes a weekday ("Mon", "Tue"...) that is calculated based on the result
 #       of get_network_time. We want to know it calculates the weekday correctly,
@@ -249,12 +249,12 @@ def test_password_ec():
 #       - "pytest.raises" because the function works by throwing a 203 exception
 #   203: Non-Authoritative Information
 # ---------------------------------------------------------------------------
-def test_sever_time():
+def test_server_time():
     assert True
 
 
 # ---------------------------------------------------------------------------
-# TEST 12: test_sever_time_client
+# TEST 12: test_server_time_client
 #   Test the weekday calculation of the "/time" REST call. You still need to
 #       stub get_network_time.
 #       In this implementation, test through the TestClient for easier code flow,
@@ -269,7 +269,7 @@ def test_sever_time():
 #       - a large loop and a smart way to check the weekday
 #   203: Non-Authoritative Information
 # ---------------------------------------------------------------------------
-def test_sever_time_client():
+def test_server_time_client():
     assert True
 
 
