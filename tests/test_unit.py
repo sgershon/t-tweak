@@ -75,6 +75,9 @@ def test_lower_ABCD():
 
 # ---------------------------------------------------------------------------
 # TEST 2: Tests can be longer and/or consist of many checks.
+#   Note this is a metamorphic test, we don't care about the actual strength
+#       of the password or of the results of the first test. We just want the
+#       tests to be consistent.
 # Amounts to 1 test in the total unit tests
 # ---------------------------------------------------------------------------
 def test_password_length_score():
@@ -223,6 +226,8 @@ def test_root_status():
 # Automate the tests for equivalence classes of password function. The list of equivalence
 #   partitions and sample values is given in the exercise document.
 # The tests will reach 100% statement coverage of the password_strength function.
+#   Hint: You will need to use:
+#   - direct calls to main.password_stregth in order to receive scores for all examples
 # ---------------------------------------------------------------------------
 def test_password_ec():
     assert True
@@ -287,9 +292,10 @@ def test_storage_db():
 # ---------------------------------------------------------------------------
 # TEST 14: Test the storage functions until it reaches 100% statement coverage.
 #   That is, coverage of the "def storage" function and of all functions
-#       within "class StateMachine".
+#       within "class StateMachine" (lines 323-369 and 511-668).
 #
-#   Check coverage with the command "coverage run -m pytest"
+#   Check coverage with the command "coverage run -m pytest", you can look at the functions
+#       mentioned above with the HTML report: ("coverage html" and ".\htmlcov\index.html")
 #   Hint: It is recommended to use:
 #       - fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
 # ---------------------------------------------------------------------------
