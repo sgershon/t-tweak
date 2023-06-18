@@ -225,7 +225,7 @@ def test_root_status():
 # TEST 10: test_password_ec
 # Automate the tests for equivalence classes of password function. The list of equivalence
 #   partitions and sample values is given in the exercise document.
-# The tests will reach 100% statement coverage of the password_strength function (line 323-369).
+# The tests will reach 100% statement coverage of the password_strength function (lines 323-369).
 #   Hint: You will need to use:
 #   - direct calls to main.password_stregth in order to receive scores for all examples
 # ---------------------------------------------------------------------------
