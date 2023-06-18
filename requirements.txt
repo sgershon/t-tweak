@@ -6,3 +6,4 @@ itsdangerous
 requests
 httpx
 pytest-cov
+uvicorn
