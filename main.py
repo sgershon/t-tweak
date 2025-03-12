@@ -350,6 +350,14 @@ def password_strength(
         distance = 12 - len(password)
         score = score - distance
 
+    # A password should NOT be the same letter or number repeated
+    if len(set(password)) <= 1:
+        score -= 7
+
+    # A password should NOT be the words “password”, "admin" or "root"
+    if password in ["password", "admin", "root"]:
+        score = 0
+
     # A password should include upper case letter(s), lower case letter(s), and number(s).
     if not [ord(i) for i in password if 65 <= ord(i) <= 90]:
         score -= 2
@@ -357,14 +365,6 @@ def password_strength(
         score -= 2
     if not [ord(i) for i in password if 48 <= ord(i) <= 57]:
         score -= 2
-
-    # A password should NOT be the words “password”, "admin" or "root"
-    if password in ["password", "admin", "root"]:
-        score = 0
-
-    # A password should NOT be the same letter or number repeated
-    if len(set(password)) <= 1:
-        score -= 7
 
     return JSONResponse(content={"res": min(max(score, 0), 10)})
 
