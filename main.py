@@ -345,6 +345,13 @@ def password_strength(
 
     score = 10
 
+    if len(password) > 20:
+        return JSONResponse(content={"res": -1})
+
+    if len(password) == 0:
+        return JSONResponse(content={"res": -2})
+
+
     # A password should be larger than 12
     if len(password) < 12:
         distance = 12 - len(password)
