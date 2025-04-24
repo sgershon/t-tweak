@@ -335,10 +335,10 @@ def password_strength(
     Rules:
     * A password's length must be between 1 and 20 chars. Values outside will return an error.
     * Strong passwords:
-        * are longer than 12 characters. For smaller passwords, **the score is reduced by the distance from the password length to 12**.
+        * are equal to or longer than 12 characters. For shorter passwords, **the score is reduced by the distance from the password length to 12**.
         * shouldn't be the same letter or number repeated for its entire length. **Such password scores 3 (minus any points lost for length < 12)**.
-        * should include at least one upper case letter, one lower case letter, and one number. **Score is reduced by 2 for every infraction**.
         * shouldn't be the words “password”, "admin" or "root". **Violating this rule results in a score of 0**.
+        * should include at least one upper case letter, one lower case letter, and one number. **Score is reduced by 2 for every infraction**.
 
     Return Type: int
     """
