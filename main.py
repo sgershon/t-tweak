@@ -298,7 +298,7 @@ def substring(
 ):
     """Extracts a substring from a larger string.
 
-    Returns the resulting string based on the start and end positions (index starts at 0).
+    Returns the resulting string based on the start and end positions (index starts at 1).
 
     Return Type: str
     """
