@@ -330,14 +330,15 @@ def password_strength(
 ):
     """A strength score for passwords between 0 and 10. Is your password strong enough?.
 
-    0 is a weak password, 10 is a strong password.
+    0 is a very weak password, 10 is a very strong password.
 
     Rules:
-    * A password should be longer than 12 characters. Score is reduced by the distance from the password length to 12.
-    * A password should include at least one upper case letter, one lower case letter, and one number. Score is reduced
-    *   by 2 for every infraction.
-    * A password shouldn't be the words “password”, "admin" or "root". Violating this rule results in a score of 0.
-    * A password shouldn't be the same letter or number repeated for its entire length. This deducts 7 points.
+    * A password's length must be between 1 and 20 chars. Values outside will return an error.
+    * Strong passwords:
+        * are equal to or longer than 12 characters. For shorter passwords, **the score is reduced by the distance from the password length to 12**.
+        * shouldn't be the same letter or number repeated for its entire length. **Such password scores 3 (minus any points lost for length < 12)**.
+        * shouldn't be the words “password”, "admin" or "root". **Violating this rule results in a score of 0**.
+        * should include at least one upper case letter, one lower case letter, and one number. **Score is reduced by 2 for every infraction**.
 
     Return Type: int
     """
@@ -360,6 +361,7 @@ def password_strength(
     # A password should NOT be the same letter or number repeated
     if len(set(password)) <= 1:
         score -= 7
+        return JSONResponse(content={"res": min(max(score, 0), 10)})
 
     # A password should NOT be the words “password”, "admin" or "root"
     if password in ["password", "admin", "root"]:
