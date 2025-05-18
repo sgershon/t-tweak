@@ -284,7 +284,7 @@ def find(
     "/substring/{string}/{start}/{end}",
     response_model=StringOut,
     responses={
-        409: {"model": Message, "description": "Conflict (incompatible start and end)"}
+        409: {"model": Message, "description": "Conflict (incompatible start and end)"},
     },
 )
 def substring(
@@ -309,7 +309,19 @@ def substring(
     if end < start:
         raise HTTPException(
             status_code=http_status.HTTP_409_CONFLICT,
-            detail=f"Conflict (incompatible start and end)",
+            detail=f"Conflict (end index smaller than start index)",
+        )
+
+    if start > len(string):
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail=f"Conflict (start index out of bounds)",
+        )
+
+    if end > len(string):
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail=f"Conflict (end index out of bounds)",
         )
 
     # The definition of start/end in the function signature should prevent them from indexing
