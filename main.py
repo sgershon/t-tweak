@@ -574,21 +574,17 @@ class StateMachine:
 
         [*] --> StandBy
         StandBy --> Input : Command\n"add"
-        StandBy --> Input : Command\n"add" + string
 
         Input --> StandBy : Command\n"stop"
-        Input --> Input : Command "add" + string\n&& #strings < 5
-        Input --> Input : Command "clear"\n/ Clears strings
-        Input --> Query : Command "add" + string\n&& #strings = 5
+        Input --> Input : Command "add" + string\n&& #strings < 3
+        Input --> Query : Command "add" + string\n&& #strings = 3
 
         Query --> StandBy : Command\n"stop"
-        Query --> Input : Command\n"clear"
         Query --> Query : Command "query"\n&& index valid
         Query --> Error : Command "query"\n&& index invalid
         Query --> Error : Command "add"
 
         Error --> StandBy : Command\n"stop"
-        Error --> Input : Command\n"clear"
         Error --> Query : Command\n"sorry"
         @enduml
         """
@@ -597,24 +593,17 @@ class StateMachine:
         if "StandBy" == current_state:
             if "add" == command:
                 self.move_state("Input")
-                if string:
-                    self.add_string(string)
         elif "Input" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
-            if "clear" == command:
-                self.clear_strings()
             if "add" == command:
                 if string:
                     self.add_string(string)
-                if len(self.get_strings()) >= 5:
+                if len(self.get_strings()) >= 3:
                     self.move_state("Query")
         elif "Query" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
-            if "clear" == command:
-                self.clear_strings()
-                self.move_state("Input")
             if "add" == command:
                 self.move_state("Error")
             if "query" == command:
@@ -624,12 +613,11 @@ class StateMachine:
                         if 1 <= index <= (len(self.get_strings())):
                             return self.get_strings()[index - 1]
                     self.move_state("Error")
+                if type(index) == int and index == 0:
+                    self.move_state("Error")
         elif "Error" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
-            if "clear" == command:
-                self.clear_strings()
-                self.move_state("Input")
             if "sorry" == command:
                 self.move_state("Query")
 
@@ -648,32 +636,47 @@ def storage(
     index: int = None,
     string: str = "",
 ):
-    """Temporary storage for strings. Can store and retrieve up to 5 strings!
+    """Temporary storage for strings. Can store and retrieve up to 3 strings!
 
-    The storage accepts 5 path commands:
+    The storage accepts 4 path commands:
     - stop
-        - Resets the machine. All strings are deleted.
-    - clear
-        - Clears strings stored in memory.
+        - Resets the machine to StandBy state from any other state. All strings are deleted.
     - add
-        - Accepts a query parameter "string" for word to add. Words are truncated to 20 chars. Up to 5 words accepted.
+        - Enters Input state.
+        - Accepts a query parameter "string" for word to add to storage (words are truncated to 20 chars).
+        - Up to 3 words accepted, at which point the machine is in Query state.
     - query
-        - Retrieves stored strings. The query parameter "index" determines the string to return (index accepts an int).
+        - During Query state, retrieves stored strings. The query parameter "index" determines the string to return (index accepts an int, and starts at 1).
+        - An invalid index will trigger the Error state.
     - sorry
-        - On errors, restores the ability to query.
+        - Once the Error state is reached, restores the ability to query.
     - state
         - Returns information about the state of the storage system
 
+    Note:
+    - The machine stores a session key as a cookie in your browser, make sure you have cookies enabled.
+    - If using curl, arguments -b and -c set a file to write/read the cookie info.
+
     Examples flow:
-    1. http://t-tweak.gershon.info/storage/add
-    1. http://t-tweak.gershon.info/storage/add?string=1st_string
-    1. ... (more words)
-    1. http://t-tweak.gershon.info/storage/add?string=5st_string
-    1. http://t-tweak.gershon.info/storage/query?index=0
-    1. http://t-tweak.gershon.info/storage/query?index=9
-    1. http://t-tweak.gershon.info/storage/sorry
-    1. http://t-tweak.gershon.info/storage/query?index=0
     1. http://t-tweak.gershon.info/storage/stop
+    1. http://t-tweak.gershon.info/storage/state
+    1. http://t-tweak.gershon.info/storage/add
+    1. http://t-tweak.gershon.info/storage/state
+    1. http://t-tweak.gershon.info/storage/add?string=1st_string
+    1. http://t-tweak.gershon.info/storage/add?string=2nd_string
+    1. http://t-tweak.gershon.info/storage/state
+    1. http://t-tweak.gershon.info/storage/add?string=3rd_string
+    1. http://t-tweak.gershon.info/storage/state
+    1. http://t-tweak.gershon.info/storage/query?index=1
+    1. http://t-tweak.gershon.info/storage/state
+    1. http://t-tweak.gershon.info/storage/query?index=9
+    1. http://t-tweak.gershon.info/storage/state
+    1. http://t-tweak.gershon.info/storage/sorry
+    1. http://t-tweak.gershon.info/storage/state
+    1. http://t-tweak.gershon.info/storage/query?index=0
+    1. http://t-tweak.gershon.info/storage/state
+    1. http://t-tweak.gershon.info/storage/stop
+    1. http://t-tweak.gershon.info/storage/state
 
     Return type: str
     """
