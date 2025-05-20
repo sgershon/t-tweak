@@ -650,15 +650,15 @@ def storage(
         - During Query state, retrieves stored strings. The query parameter "index" determines the string to return (index accepts an int, and starts at 1).
         - An invalid index will trigger the Error state.
     - sorry
-        - Once the Error state is reached, 'sorry' restores the ability to query.
+        - Once the Error state is reached, "sorry" restores the ability to query.
     - state
         - At any state, shows information about the state of the storage system
 
     Note:
     - The machine stores a session key as a cookie in your browser, make sure you have cookies enabled.
-    - If using curl, arguments -b and -c set a file to write/read the cookie info.
+    - If using curl, arguments -b and -c set a file to write/read the cookie info (more info on google).
 
-    Examples flow:
+    Example flow:
     1. http://t-tweak.gershon.info/storage/stop
     1. http://t-tweak.gershon.info/storage/state
     1. http://t-tweak.gershon.info/storage/add
