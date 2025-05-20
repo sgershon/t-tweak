@@ -592,7 +592,8 @@ class StateMachine:
         current_state = self.get_state()
         if "StandBy" == current_state:
             if "add" == command:
-                self.move_state("Input")
+                if not string:
+                    self.move_state("Input")
         elif "Input" == current_state:
             if "stop" == command:
                 self.move_state("StandBy")
@@ -641,17 +642,17 @@ def storage(
     The storage accepts 4 path commands:
     - stop
         - Resets the machine to StandBy state from any other state. All strings are deleted.
+        - To leave StandBy state to Input state, issue the command 'add' (without a string argument)
     - add
-        - Enters Input state.
-        - Accepts a query parameter "string" for word to add to storage (words are truncated to 20 chars).
-        - Up to 3 words accepted, at which point the machine is in Query state.
+        - During Input state, accepts a query parameter "string" for word to add to storage (words are truncated to 20 chars).
+        - Up to 3 words accepted, at which point the machine moves to Query state.
     - query
         - During Query state, retrieves stored strings. The query parameter "index" determines the string to return (index accepts an int, and starts at 1).
         - An invalid index will trigger the Error state.
     - sorry
-        - Once the Error state is reached, restores the ability to query.
+        - Once the Error state is reached, 'sorry' restores the ability to query.
     - state
-        - Returns information about the state of the storage system
+        - At any state, shows information about the state of the storage system
 
     Note:
     - The machine stores a session key as a cookie in your browser, make sure you have cookies enabled.
