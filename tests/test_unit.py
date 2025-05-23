@@ -4,7 +4,6 @@ import os
 import sys
 import json
 import random
-import datetime
 
 import fastapi.exceptions
 import pytest
@@ -215,7 +214,7 @@ def test_with_exception():
 #   but not another, etc.
 # Amounts to 1 test in the total unit tests
 # ---------------------------------------------------------------------------
-@pytest.mark.skipif(fastapi.__version__ > "0.95", reason="requires fastapi <= 0.95")
+@pytest.mark.skipif(fastapi.__version__ < "0.95", reason="requires fastapi >= 0.95")
 def test_root_status():
     r = client.get("/")
     assert "Operational" == r.json()["res"]
