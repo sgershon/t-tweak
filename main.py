@@ -582,7 +582,7 @@ class StateMachine:
         Query --> StandBy : Command\n"stop"
         Query --> Query : Command "query"\n&& index valid
         Query --> Error : Command "query"\n&& index invalid
-        Query --> Error : Command "add"
+        Query --> Error : Command "add" + string
 
         Error --> StandBy : Command\n"stop"
         Error --> Query : Command\n"sorry"
@@ -606,7 +606,8 @@ class StateMachine:
             if "stop" == command:
                 self.move_state("StandBy")
             if "add" == command:
-                self.move_state("Error")
+                if string:
+                    self.move_state("Error")
             if "query" == command:
                 if index:
                     if type(index) == int or index.isnumeric():
