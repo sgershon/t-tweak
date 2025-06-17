@@ -643,12 +643,14 @@ def storage(
     The storage accepts 4 path commands:
     - stop
         - Resets the machine to StandBy state from any other state. All strings are deleted.
-        - To leave StandBy state to Input state, issue the command 'add' (without a string argument)
     - add
+        - To leave StandBy state to Input state, issue the command 'add' (without a string argument)
         - During Input state, accepts a query parameter "string" for word to add to storage (words are truncated to 20 chars).
         - Up to 3 words accepted, at which point the machine moves to Query state.
+        - In Query state, the command "add" with a string will trigger the Error state.
     - query
-        - During Query state, retrieves stored strings. The query parameter "index" determines the string to return (index accepts an int, and starts at 1).
+        - During Query state, retrieves stored strings.
+        - The query parameter "index" determines the string to return (index accepts an int, and starts at 1).
         - An invalid index will trigger the Error state.
     - sorry
         - Once the Error state is reached, "sorry" restores the ability to query.
