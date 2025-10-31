@@ -1,6 +1,6 @@
-#from __future__ import annotations
+""" All the t-tweak functions. Called "main" to fit most uvicorn's server standard tutorials."""
+
 import os
-import fcntl
 import string
 import random
 import datetime
@@ -11,6 +11,16 @@ from fastapi.responses import Response, JSONResponse, FileResponse, PlainTextRes
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
 
+# The "extra" module is for external functions that are considered out of the programmer's control.
+import extra
+
+# "fcntl" is a linux module, important to control file access in a multi-client web server.
+#   In Windows it doesn't exist, and for students to run locally we invented a mock for
+#   the module. Adds but a tiny risk of concomitant write to logs, a non issue.
+try:
+    import fcntl
+except ModuleNotFoundError:
+    import win_fctl as fcntl
 
 description = """
 T-Tweak helps you tweak text! 🖉
@@ -24,8 +34,16 @@ app = FastAPI(
     contact={
         "name": "67778 Course",
     },
+    swagger_ui_parameters={"defaultModelsExpandDepth": -1},
 )
 ttweak_key = "neverimagineyourselftobe"
+
+random_seed = 5
+extra.reset_random(random_seed)
+
+
+# ## ### ### ### ###
+# Classes used to model de data structures for the REST responses.
 
 
 class StringOut(BaseModel):
@@ -48,9 +66,12 @@ class Message(BaseModel):
     detail: str
 
 
-count_file = "count.cnt"
-hist_file = "history.txt"
-log_file = "log.log"
+# ## ### ### ### ###
+# Logging files and the functions that fill them
+
+count_file = "logs/count.cnt"
+hist_file = "logs/history.txt"
+log_file = "logs/log.log"
 
 
 def count(increment=None):
@@ -257,7 +278,7 @@ def find(
     "/substring/{string}/{start}/{end}",
     response_model=StringOut,
     responses={
-        409: {"model": Message, "description": "Conflict (incompatible start and end)"}
+        409: {"model": Message, "description": "Conflict (incompatible start and end)"},
     },
 )
 def substring(
@@ -306,8 +327,26 @@ def password_strength(
 
     score = 10
 
+    if len(password) > 20:
+        return JSONResponse(content={"res": -1})
+
+    if len(password) == 0:
+        return JSONResponse(content={"res": -2})
+
+
     # A password should be larger than 12
-    score = len(password) - 2
+    if len(password) < 12:
+        distance = 12 - len(password)
+        score = score - distance
+
+    # A password should NOT be the same letter or number repeated
+    if len(set(password)) <= 1:
+        score -= 7
+        return JSONResponse(content={"res": min(max(score, 0), 10)})
+
+    # A password should NOT be the words “password”, "admin" or "root"
+    if password in ["password", "admin", "root"]:
+        score = 0
 
     # A password should include upper case letter(s), lower case letter(s), and number(s).
     if not [ord(i) for i in password if 65 <= ord(i) <= 90]:
@@ -323,14 +362,6 @@ def password_strength(
         if i + 1 < len(password):
             if ord(l) + 1 == ord(password[i + 1]):
                 score -= 1
-
-    # A password shouldn’t be the words “password”, "admin" or "root"
-    if password in ["password", "admin", "root"]:
-        score = 0
-
-    # A password shouldn’t be the same letter or number repeated
-    if len(set(password)) <= 1:
-        score -= 7
 
     log(f"password {password} {score}")
 
