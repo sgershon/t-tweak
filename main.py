@@ -67,51 +67,64 @@ class Message(BaseModel):
 # ## ### ### ### ###
 # Logging files and the functions that fill them
 
-count_file = "logs/count.cnt"
-hist_file = "logs/history.txt"
-log_file = "logs/log.log"
+# Use /tmp for serverless environments like Vercel (filesystem is read-only except /tmp)
+count_file = "/tmp/count.cnt" if os.environ.get("VERCEL") else "logs/count.cnt"
+hist_file = "/tmp/history.txt" if os.environ.get("VERCEL") else "logs/history.txt"
+log_file = "/tmp/log.log" if os.environ.get("VERCEL") else "logs/log.log"
 
 
 def count(increment=None):
-    cnt = 0
-    if os.path.isfile(count_file):
-        with open(count_file, "r") as c:
-            r = c.read()
-            cnt = int(r) if r.isnumeric() else 0
-    if type(increment) is int:
-        with open(count_file, "w+") as c:
-            fcntl.flock(c, fcntl.LOCK_EX)
-            c.write(str(cnt + 1))
-            fcntl.flock(c, fcntl.LOCK_UN)
-    return cnt
+    try:
+        cnt = 0
+        if os.path.isfile(count_file):
+            with open(count_file, "r") as c:
+                r = c.read()
+                cnt = int(r) if r.isnumeric() else 0
+        if type(increment) is int:
+            with open(count_file, "w+") as c:
+                fcntl.flock(c, fcntl.LOCK_EX)
+                c.write(str(cnt + 1))
+                fcntl.flock(c, fcntl.LOCK_UN)
+        return cnt
+    except Exception:
+        # Silently fail in serverless environments where filesystem may be restricted
+        return 0
 
 
 def history(new_string=None):
-    hist = []
-    if os.path.isfile(hist_file):
-        with open(hist_file, "r") as h:
-            hist = h.readlines()
-    if new_string:
-        hist.append(f"{new_string}\n")
-        with open(hist_file, "w") as h:
-            fcntl.flock(h, fcntl.LOCK_EX)
-            h.writelines(hist[-50:])
-            fcntl.flock(h, fcntl.LOCK_UN)
+    try:
+        hist = []
+        if os.path.isfile(hist_file):
+            with open(hist_file, "r") as h:
+                hist = h.readlines()
+        if new_string:
+            hist.append(f"{new_string}\n")
+            with open(hist_file, "w") as h:
+                fcntl.flock(h, fcntl.LOCK_EX)
+                h.writelines(hist[-50:])
+                fcntl.flock(h, fcntl.LOCK_UN)
 
-    return [h.strip() for h in hist]
+        return [h.strip() for h in hist]
+    except Exception:
+        # Silently fail in serverless environments where filesystem may be restricted
+        return []
 
 
 def log(msg):
-    items = []
-    if os.path.isfile(log_file):
-        with open(log_file, "r") as l:
-            items = l.readlines()
-    if msg:
-        items.append(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
-        with open(log_file, "w") as l:
-            fcntl.flock(l, fcntl.LOCK_EX)
-            l.writelines(items[-250:])
-            fcntl.flock(l, fcntl.LOCK_UN)
+    try:
+        items = []
+        if os.path.isfile(log_file):
+            with open(log_file, "r") as l:
+                items = l.readlines()
+        if msg:
+            items.append(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
+            with open(log_file, "w") as l:
+                fcntl.flock(l, fcntl.LOCK_EX)
+                l.writelines(items[-250:])
+                fcntl.flock(l, fcntl.LOCK_UN)
+    except Exception:
+        # Silently fail in serverless environments where filesystem may be restricted
+        pass
 
 
 def log_count_history(l=True, h=True, c=True, **kwargs):
@@ -506,15 +519,19 @@ def server_reset(
 
     # We reset history and count, but leave the log intact
 
-    with open(count_file, "w") as c:
-        fcntl.flock(c, fcntl.LOCK_EX)
-        c.write("0\n")
-        fcntl.flock(c, fcntl.LOCK_UN)
+    try:
+        with open(count_file, "w") as c:
+            fcntl.flock(c, fcntl.LOCK_EX)
+            c.write("0\n")
+            fcntl.flock(c, fcntl.LOCK_UN)
 
-    with open(hist_file, "w") as h:
-        fcntl.flock(h, fcntl.LOCK_EX)
-        h.write("")
-        fcntl.flock(h, fcntl.LOCK_UN)
+        with open(hist_file, "w") as h:
+            fcntl.flock(h, fcntl.LOCK_EX)
+            h.write("")
+            fcntl.flock(h, fcntl.LOCK_UN)
+    except Exception:
+        # Silently fail in serverless environments where filesystem may be restricted
+        pass
 
     # Reset also the random seed (results should repeat) and
     extra.reset_random(random_seed)
