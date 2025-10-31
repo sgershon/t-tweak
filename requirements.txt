@@ -1,0 +1,8 @@
+pytest
+fastapi
+starlette
+pydantic
+itsdangerous
+requests
+httpx
+pytest-cov
