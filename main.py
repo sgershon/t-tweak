@@ -36,7 +36,7 @@ app = FastAPI(
     },
     swagger_ui_parameters={"defaultModelsExpandDepth": -1},
 )
-ttweak_key = "neverimagineyourselftobe"
+ttweak_key = "course67778isthebestinhuji"
 
 random_seed = 5
 extra.reset_random(random_seed)
@@ -69,52 +69,64 @@ class Message(BaseModel):
 # ## ### ### ### ###
 # Logging files and the functions that fill them
 
-count_file = "logs/count.cnt"
-hist_file = "logs/history.txt"
-log_file = "logs/log.log"
+# Use /tmp for serverless environments like Vercel (filesystem is read-only except /tmp)
+count_file = "/tmp/count.cnt" if os.environ.get("VERCEL") else "logs/count.cnt"
+hist_file = "/tmp/history.txt" if os.environ.get("VERCEL") else "logs/history.txt"
+log_file = "/tmp/log.log" if os.environ.get("VERCEL") else "logs/log.log"
 
 
 def count(increment=None):
-    cnt = 0
-    if os.path.isfile(count_file):
-        with open(count_file, "r") as c:
-            r = c.read()
-            cnt = int(r) if r.isnumeric() else 0
-    if type(increment) is int:
-        with open(count_file, "w+") as c:
-            fcntl.flock(c, fcntl.LOCK_EX)
-            c.write(str(cnt + 1))
-            fcntl.flock(c, fcntl.LOCK_UN)
-    return cnt
+    try:
+        cnt = 0
+        if os.path.isfile(count_file):
+            with open(count_file, "r") as c:
+                r = c.read()
+                cnt = int(r) if r.isnumeric() else 0
+        if type(increment) is int:
+            with open(count_file, "w+") as c:
+                fcntl.flock(c, fcntl.LOCK_EX)
+                c.write(str(cnt + 1))
+                fcntl.flock(c, fcntl.LOCK_UN)
+        return cnt
+    except Exception:
+        # Silently fail in serverless environments where filesystem may be restricted
+        return 0
 
 
 def history(new_string=None):
-    hist = []
-    if os.path.isfile(hist_file):
-        with open(hist_file, "r") as h:
-            hist = h.readlines()
-    if new_string:
-        hist.append(f"{new_string}\n")
-        with open(hist_file, "w") as h:
-            fcntl.flock(h, fcntl.LOCK_EX)
-            h.writelines(hist[-50:])
-            fcntl.flock(h, fcntl.LOCK_UN)
+    try:
+        hist = []
+        if os.path.isfile(hist_file):
+            with open(hist_file, "r") as h:
+                hist = h.readlines()
+        if new_string:
+            hist.append(f"{new_string}\n")
+            with open(hist_file, "w") as h:
+                fcntl.flock(h, fcntl.LOCK_EX)
+                h.writelines(hist[-50:])
+                fcntl.flock(h, fcntl.LOCK_UN)
 
-    return [h.strip() for h in hist]
+        return [h.strip() for h in hist]
+    except Exception:
+        # Silently fail in serverless environments where filesystem may be restricted
+        return []
 
 
 def log(msg):
-    items = []
-    if os.path.isfile(log_file):
-        with open(log_file, "r") as l:
-            items = l.readlines()
-    if msg:
-        items.append(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
-        with open(log_file, "w") as l:
-            fcntl.flock(l, fcntl.LOCK_EX)
-            l.writelines(items[-250:])
-            fcntl.flock(l, fcntl.LOCK_UN)
-
+    try:
+        items = []
+        if os.path.isfile(log_file):
+            with open(log_file, "r") as l:
+                items = l.readlines()
+        if msg:
+            items.append(f"{datetime.datetime.now().strftime('%c')} {str(msg)}\n")
+            with open(log_file, "w") as l:
+                fcntl.flock(l, fcntl.LOCK_EX)
+                l.writelines(items[-250:])
+                fcntl.flock(l, fcntl.LOCK_UN)
+    except Exception:
+        # Silently fail in serverless environments where filesystem may be restricted
+        pass
 
 log("Starting T-Tweak")
 
@@ -129,6 +141,12 @@ def log_count_history(l=True, h=True, c=True, **kwargs):
     inc = kwargs.get("inc", None)
     if c:
         count(inc)
+
+
+# ## ### ### ### ###
+# REST Functions and their responses
+
+log("Starting T-Tweak")
 
 
 @app.get("/", response_model=StringOut)
@@ -173,6 +191,7 @@ def get_history():
     Return Type: str
     """
     log("get_history")
+
     return JSONResponse(content=history())
 
 
@@ -511,20 +530,29 @@ def server_reset():
     Return Type: str
     """
 
-    # Let's leave the log intact on reset
-    # with open(log_file, "w") as l:
-    #     fcntl.flock(l, fcntl.LOCK_EX)
-    #     l.write("")
-    #     fcntl.flock(l, fcntl.LOCK_UN)
-    with open(count_file, "w") as c:
-        fcntl.flock(c, fcntl.LOCK_EX)
-        c.write("0\n")
-        fcntl.flock(c, fcntl.LOCK_UN)
-    with open(hist_file, "w") as h:
-        fcntl.flock(h, fcntl.LOCK_EX)
-        h.write("")
-        fcntl.flock(h, fcntl.LOCK_UN)
-    reset_random(random_seed)
+    # We reset history and count, but leave the log intact
+
+    try:
+        with open(count_file, "w") as c:
+            fcntl.flock(c, fcntl.LOCK_EX)
+            c.write("0\n")
+            fcntl.flock(c, fcntl.LOCK_UN)
+
+        with open(hist_file, "w") as h:
+            fcntl.flock(h, fcntl.LOCK_EX)
+            h.write("")
+            fcntl.flock(h, fcntl.LOCK_UN)
+    except Exception:
+        # Silently fail in serverless environments where filesystem may be restricted
+        pass
+
+    # Reset also the random seed (results should repeat) and
+    extra.reset_random(random_seed)
+    log(f"Setting seed {random_seed}")
+
+    # Reset and clear the storage
+    machine = StateMachine(request)
+    machine.act(command="stop")
 
     log_count_history(l=True, h=True, c=True, msg=f"reset_server", inc=1)
 
