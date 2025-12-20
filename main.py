@@ -156,7 +156,7 @@ def root():
     Return Type: str"""
     log("root")
 
-    return JSONResponse(content={"Status": "Operational"})
+    return JSONResponse(content={"Status": "Operational (review)"})
 
 
 @app.get("/robots.txt", include_in_schema=False)
