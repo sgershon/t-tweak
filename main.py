@@ -21,7 +21,7 @@ except ModuleNotFoundError:
     import win_fctl as fcntl
 
 description = """
-T-Tweak helps you tweak text! 🖉
+T-Tweak helps you tweak text!
 
 ### All functions log their usage, so don't write anything secret!
 """
@@ -206,11 +206,21 @@ def length(text: str = Path(..., description="Text to be measured", max_length=2
 def reverse(text: str = Path(..., description="Text to be reversed", max_length=20)):
     """Reverses the text provided.
 
-    Return Type: str
+    Includes a forced bug: only the first 16 characters are reversed.
+    If the text is longer than 16 characters, the last characters remain in place.
     """
+
     log_count_history(l=True, h=True, c=True, msg=f"reverse {text}", inc=1)
 
-    return JSONResponse(content={"res": text[::-1]})
+    if len(text) > 16:
+        # Keep the last characters in place
+        keep = text[16:]          # characters after index 16
+        to_reverse = text[:16]    # first 16 characters
+        result = to_reverse[::-1] + keep
+    else:
+        result = text[::-1]
+
+    return JSONResponse(content={"res": result})
 
 
 @app.get("/upper/{text}", response_model=StringOut)
@@ -313,29 +323,31 @@ def substring(
 
     Returns the resulting string based on the start and end positions (index starts at 1).
 
+    Includes two forced bugs: no check for end < start and no check for start or end > len(string).
+
     Return Type: str
     """
     log_count_history(
         l=True, h=True, c=True, msg=f"substring {string}, {start}:{end}", inc=1
     )
 
-    if end < start:
-        raise HTTPException(
-            status_code=http_status.HTTP_409_CONFLICT,
-            detail=f"Conflict (end index smaller than start index)",
-        )
+    # if end < start:
+    #     raise HTTPException(
+    #         status_code=http_status.HTTP_409_CONFLICT,
+    #         detail=f"Conflict (end index smaller than start index)",
+    #     )
 
-    if start > len(string):
-        raise HTTPException(
-            status_code=http_status.HTTP_409_CONFLICT,
-            detail=f"Conflict (start index out of bounds)",
-        )
+    # if start > len(string):
+    #     raise HTTPException(
+    #         status_code=http_status.HTTP_409_CONFLICT,
+    #         detail=f"Conflict (start index out of bounds)",
+    #     )
 
-    if end > len(string):
-        raise HTTPException(
-            status_code=http_status.HTTP_409_CONFLICT,
-            detail=f"Conflict (end index out of bounds)",
-        )
+    # if end > len(string):
+    #     raise HTTPException(
+    #         status_code=http_status.HTTP_409_CONFLICT,
+    #         detail=f"Conflict (end index out of bounds)",
+    #     )
 
     # The definition of start/end in the function signature should prevent them from indexing
     #   outside the array. This protection keeps the function robust in different scenarios.
@@ -367,40 +379,8 @@ def password_strength(
 
     Return Type: int
     """
-    log_count_history(l=True, h=True, c=True, msg=f"password {password}", inc=1)
-
-    score = 10
-
-    if len(password) > 20:
-        return JSONResponse(content={"res": -1})
-
-    if len(password) == 0:
-        return JSONResponse(content={"res": -2})
-
-
-    # A password should be larger than 12
-    if len(password) < 12:
-        distance = 12 - len(password)
-        score = score - distance
-
-    # A password should NOT be the same letter or number repeated
-    if len(set(password)) <= 1:
-        score -= 7
-        return JSONResponse(content={"res": min(max(score, 0), 10)})
-
-    # A password should NOT be the words “password”, "admin" or "root"
-    if password in ["password", "admin", "root"]:
-        score = 0
-
-    # A password should include upper case letter(s), lower case letter(s), and number(s).
-    if not [ord(i) for i in password if 65 <= ord(i) <= 90]:
-        score -= 2
-    if not [ord(i) for i in password if 97 <= ord(i) <= 122]:
-        score -= 2
-    if not [ord(i) for i in password if 48 <= ord(i) <= 57]:
-        score -= 2
-
-    return JSONResponse(content={"res": min(max(score, 0), 10)})
+        
+    return JSONResponse(content={"res":"password_strength function not implemented yet"})
 
 
 @app.get("/counterstring/{cs_length}/{char}", response_model=StringOut)
@@ -418,6 +398,8 @@ def counterstring(
 
     Learn more about counterstrings here: https://www.satisfice.com/blog/archives/22
 
+    forced bug: creates a counterstring that is shorter by one from the requested length.
+
     Return Type: str
     """
     log_count_history(
@@ -426,6 +408,10 @@ def counterstring(
 
     # Discussion on counterstring algorithms available at https://www.eviltester.com/2018/05/counterstring-algorithms.html
     # This implementation is copied from https://github.com/deefex/pyclip/blob/master/pyclip/counterstring.py
+
+    # Forced bug: reduce the requested length by 1
+    cs_length = max(0, cs_length - 1)
+
     the_counterstring = ""
 
     while cs_length > 0:
@@ -519,131 +505,8 @@ def server_reset(
 
     # We reset history and count, but leave the log intact
 
-    try:
-        with open(count_file, "w") as c:
-            fcntl.flock(c, fcntl.LOCK_EX)
-            c.write("0\n")
-            fcntl.flock(c, fcntl.LOCK_UN)
+    return JSONResponse(content={"res": "Server reset not implemented yet"})
 
-        with open(hist_file, "w") as h:
-            fcntl.flock(h, fcntl.LOCK_EX)
-            h.write("")
-            fcntl.flock(h, fcntl.LOCK_UN)
-    except Exception:
-        # Silently fail in serverless environments where filesystem may be restricted
-        pass
-
-    # Reset also the random seed (results should repeat) and
-    extra.reset_random(random_seed)
-    log(f"Setting seed {random_seed}")
-
-    # Reset and clear the storage
-    machine = StateMachine(request)
-    machine.act(command="stop")
-
-    log_count_history(l=True, h=True, c=True, msg=f"reset_server", inc=1)
-
-    return JSONResponse(content={"res": f"Server reset"})
-
-
-class StateMachine:
-    def __init__(self, request) -> None:
-        self.session = request.session
-        self.state = "StandBy"
-
-        machine = self.session.get(ttweak_key)
-        if not machine:
-            machine = self.session[ttweak_key] = {"state": "StandBy", "strings": []}
-        self.machine = machine
-
-    def __str__(self) -> str:
-        return f"State: {self.get_state()}, Strings: {', '.join(self.get_strings())}"
-
-    def move_state(self, new_state):
-        self.state = new_state
-        if "StandBy" == self.state:
-            self.clear_strings()
-        self.machine["state"] = self.state
-
-    def get_state(self):
-        return self.machine["state"]
-
-    def add_string(self, string):
-        extra.update_db(self.machine["strings"], string)
-
-    def get_strings(self):
-        return extra.read_db(self.machine["strings"])
-
-    def clear_strings(self):
-        extra.update_db(self.machine["strings"], None)
-
-    def act(self, command, string="", index=None):
-        """
-        @startuml
-        left to right direction
-
-        StandBy : No strings.
-        StandBy : Waiting for commands.
-        Input : String reception mode.
-        Query : Returns string per index
-        Error : Exception state:
-        Error : Invalid index.
-
-        [*] --> StandBy
-        StandBy --> Input : Command\n"add"
-
-        Input --> StandBy : Command\n"stop"
-        Input --> Input : Command "add" + string\n&& #strings < 3
-        Input --> Query : Command "add" + string\n&& #strings = 3
-
-        Query --> StandBy : Command\n"stop"
-        Query --> Query : Command "query"\n&& index valid
-        Query --> Error : Command "query"\n&& index invalid
-        Query --> Error : Command "add" + string
-
-        Error --> StandBy : Command\n"stop"
-        Error --> Query : Command\n"sorry"
-        @enduml
-        """
-
-        current_state = self.get_state()
-        if "StandBy" == current_state:
-            if "add" == command:
-                if not string:
-                    self.move_state("Input")
-        elif "Input" == current_state:
-            if "stop" == command:
-                self.move_state("StandBy")
-            if "add" == command:
-                if string:
-                    self.add_string(string)
-                if len(self.get_strings()) >= 3:
-                    self.move_state("Query")
-        elif "Query" == current_state:
-            if "stop" == command:
-                self.move_state("StandBy")
-            if "add" == command:
-                if string:
-                    self.move_state("Error")
-            if "query" == command:
-                if index:
-                    if type(index) == int or index.isnumeric():
-                        index = int(index)
-                        if 1 <= index <= (len(self.get_strings())):
-                            return self.get_strings()[index - 1]
-                    self.move_state("Error")
-                if type(index) == int and index == 0:
-                    self.move_state("Error")
-        elif "Error" == current_state:
-            if "stop" == command:
-                self.move_state("StandBy")
-            if "sorry" == command:
-                self.move_state("Query")
-
-        if "Error" == self.get_state():
-            return "Error"
-        return "Ok"
-        # return self.machine
 
 
 @app.get("/storage/{command}", response_model=StringOut)
@@ -655,62 +518,12 @@ def storage(
     index: int = None,
     string: str = "",
 ):
-    """Temporary storage for strings. Can store and retrieve up to 3 strings!
-
-    The storage accepts 4 path commands:
-    - stop
-        - Resets the machine to StandBy state from any other state. All strings are deleted.
-    - add
-        - To leave StandBy state to Input state, issue the command 'add' (without a string argument)
-        - During Input state, accepts a query parameter "string" for word to add to storage (words are truncated to 20 chars).
-        - Up to 3 words accepted, at which point the machine moves to Query state.
-        - In Query state, the command "add" with a string will trigger the Error state.
-    - query
-        - During Query state, retrieves stored strings.
-        - The query parameter "index" determines the string to return (index accepts an int, and starts at 1).
-        - An invalid index will trigger the Error state.
-    - sorry
-        - Once the Error state is reached, "sorry" restores the ability to query.
-    - state
-        - At any state, shows information about the state of the storage system
-
-    Note:
-    - The machine stores a session key as a cookie in your browser, make sure you have cookies enabled.
-    - If using curl, arguments -b and -c set a file to write/read the cookie info (more info on google).
-
-    Example flow:
-    1. http://t-tweak.gershon.info/storage/stop
-    1. http://t-tweak.gershon.info/storage/state
-    1. http://t-tweak.gershon.info/storage/add
-    1. http://t-tweak.gershon.info/storage/state
-    1. http://t-tweak.gershon.info/storage/add?string=1st_string
-    1. http://t-tweak.gershon.info/storage/add?string=2nd_string
-    1. http://t-tweak.gershon.info/storage/state
-    1. http://t-tweak.gershon.info/storage/add?string=3rd_string
-    1. http://t-tweak.gershon.info/storage/state
-    1. http://t-tweak.gershon.info/storage/query?index=1
-    1. http://t-tweak.gershon.info/storage/state
-    1. http://t-tweak.gershon.info/storage/query?index=9
-    1. http://t-tweak.gershon.info/storage/state
-    1. http://t-tweak.gershon.info/storage/sorry
-    1. http://t-tweak.gershon.info/storage/state
-    1. http://t-tweak.gershon.info/storage/query?index=0
-    1. http://t-tweak.gershon.info/storage/state
-    1. http://t-tweak.gershon.info/storage/stop
-    1. http://t-tweak.gershon.info/storage/state
-
-    Return type: str
+    """
+    Storage command not implemented yet.
     """
 
-    log_count_history(l=True, h=True, c=True, msg=f"storage {command}", inc=1)
+    return JSONResponse(content={"res": "Storage command not implemented yet"})
 
-    machine = StateMachine(request)
-
-    if "state" == command:
-        return JSONResponse(content={"res": str(machine)})
-
-    res = machine.act(command, string=string[:20], index=index)
-    return JSONResponse(content={"res": res})
 
 
 app.add_middleware(SessionMiddleware, secret_key=ttweak_key)
