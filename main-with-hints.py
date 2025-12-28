@@ -205,13 +205,17 @@ def length(text: str = Path(..., description="Text to be measured", max_length=2
 @app.get("/reverse/{text}", response_model=StringOut)
 def reverse(text: str = Path(..., description="Text to be reversed", max_length=20)):
     """Reverses the text provided.
+
+    Includes a forced bug: only the first 16 characters are reversed.
+    If the text is longer than 16 characters, the last characters remain in place.
     """
 
     log_count_history(l=True, h=True, c=True, msg=f"reverse {text}", inc=1)
 
     if len(text) > 16:
-        keep = text[16:]         
-        to_reverse = text[:16]   
+        # Keep the last characters in place
+        keep = text[16:]          # characters after index 16
+        to_reverse = text[:16]    # first 16 characters
         result = to_reverse[::-1] + keep
     else:
         result = text[::-1]
@@ -319,12 +323,31 @@ def substring(
 
     Returns the resulting string based on the start and end positions (index starts at 1).
 
+    Includes two forced bugs: no check for end < start and no check for start or end > len(string).
+
     Return Type: str
     """
     log_count_history(
         l=True, h=True, c=True, msg=f"substring {string}, {start}:{end}", inc=1
     )
 
+    # if end < start:
+    #     raise HTTPException(
+    #         status_code=http_status.HTTP_409_CONFLICT,
+    #         detail=f"Conflict (end index smaller than start index)",
+    #     )
+
+    # if start > len(string):
+    #     raise HTTPException(
+    #         status_code=http_status.HTTP_409_CONFLICT,
+    #         detail=f"Conflict (start index out of bounds)",
+    #     )
+
+    # if end > len(string):
+    #     raise HTTPException(
+    #         status_code=http_status.HTTP_409_CONFLICT,
+    #         detail=f"Conflict (end index out of bounds)",
+    #     )
 
     # The definition of start/end in the function signature should prevent them from indexing
     #   outside the array. This protection keeps the function robust in different scenarios.
@@ -375,6 +398,8 @@ def counterstring(
 
     Learn more about counterstrings here: https://www.satisfice.com/blog/archives/22
 
+    forced bug: creates a counterstring that is shorter by one from the requested length.
+
     Return Type: str
     """
     log_count_history(
@@ -384,6 +409,7 @@ def counterstring(
     # Discussion on counterstring algorithms available at https://www.eviltester.com/2018/05/counterstring-algorithms.html
     # This implementation is copied from https://github.com/deefex/pyclip/blob/master/pyclip/counterstring.py
 
+    # Forced bug: reduce the requested length by 1
     cs_length = max(0, cs_length - 1)
 
     the_counterstring = ""
