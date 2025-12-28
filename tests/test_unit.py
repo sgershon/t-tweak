@@ -4,15 +4,11 @@ import os
 import sys
 import json
 import random
-from datetime import datetime
 
 import fastapi.exceptions
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import status as http_status
-from fastapi import HTTPException
-
-from packaging import version
 
 
 # Makes it easier to run in students' Windows's laptops, with no need to set path vars
