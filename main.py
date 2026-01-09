@@ -22,6 +22,7 @@ try:
 except ModuleNotFoundError:
     import win_fctl as fcntl
 
+branch_name = "review"
 description = """
 T-Tweak helps you tweak text! 🖉
 
@@ -146,6 +147,9 @@ def log_count_history(l=True, h=True, c=True, **kwargs):
 # ## ### ### ### ###
 # REST Functions and their responses
 
+# ## ### ### ### ###
+# REST Functions and their responses
+
 log("Starting T-Tweak")
 
 
@@ -156,7 +160,7 @@ def root():
     Return Type: str"""
     log("root")
 
-    return JSONResponse(content={"Status": "Operational (review)"})
+    return JSONResponse(content={"Status": f"Operational ({branch_name})"})
 
 
 @app.get("/robots.txt", include_in_schema=False)
@@ -352,7 +356,6 @@ def password_strength(
     if len(password) == 0:
         return JSONResponse(content={"res": -2})
 
-
     # A password should be larger than 12
     if len(password) < 12:
         distance = 12 - len(password)
@@ -516,7 +519,7 @@ def server_time():
     log_count_history(l=True, h=True, c=True, msg=f"server_time", inc=1)
 
     raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail=f"{datetime.datetime.now().strftime('%c')}",
     )
 

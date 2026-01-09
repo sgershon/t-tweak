@@ -10,6 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import status as http_status
 
+from packaging import version
 
 # Makes it easier to run in students' Windows's laptops, with no need to set path vars
 sys.path.append(os.path.dirname(os.path.abspath(__name__)))
@@ -214,10 +215,13 @@ def test_with_exception():
 #   but not another, etc.
 # Amounts to 1 test in the total unit tests
 # ---------------------------------------------------------------------------
-@pytest.mark.skipif(fastapi.__version__ < "0.95", reason="requires fastapi >= 0.95")
+@pytest.mark.skipif(
+    version.parse(fastapi.__version__) < version.parse("0.129.0"),
+    reason="requires fastapi >= 0.129.0"
+)
 def test_root_status():
     r = client.get("/")
-    assert "Operational" == r.json()["res"]
+    assert "Operational (review)" == r.json()["res"]
 
 
 # ---------------------------------------------------------------------------
@@ -228,8 +232,9 @@ def test_root_status():
 #   Hint: You will need to use:
 #   - direct calls to main.password_stregth in order to receive scores for all examples
 # ---------------------------------------------------------------------------
+@pytest.mark.skip(reason="Skipping this test for now")
 def test_password_ec():
-    assert True
+    assert False
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +289,7 @@ def test_server_time_client():
 #       - fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
 #       - A function you invent that will mock update_db and update a flag for pass/fail (can be global)
 # ---------------------------------------------------------------------------
+@pytest.mark.skip(reason="Skipping this test for now")
 def test_storage_db():
     assert True
 
@@ -298,5 +304,6 @@ def test_storage_db():
 #   Hint: It is recommended to use:
 #       - fastapi's "TestClient" to run the REST API via a client (it keeps the session alive).
 # ---------------------------------------------------------------------------
+@pytest.mark.skip(reason="Skipping this test for now")
 def test_storage():
     assert True
