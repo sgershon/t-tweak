@@ -20,6 +20,7 @@ try:
 except ModuleNotFoundError:
     import win_fctl as fcntl
 
+branch_name = "main"
 description = """
 T-Tweak helps you tweak text! 🖉
 
@@ -152,7 +153,7 @@ def status():
     Return Type: str"""
     log("root")
 
-    return JSONResponse(content={"res": "Operational (main)"})
+    return JSONResponse(content={"res": f"Operational ({branch_name})"})
 
 
 @app.get("/robots.txt", include_in_schema=False)
