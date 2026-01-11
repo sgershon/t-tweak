@@ -1,4 +1,24 @@
-""" All the t-tweak functions. Called "main" to fit most uvicorn's server standard tutorials."""
+""" All the t-tweak functions. Called "main" to fit most uvicorn's server standard tutorials.
+
+This version includes a number of bugs intentionally added for the unit testing and for the 
+bug reporting lectures / exercises.
+
+1) In the "length" function, the length calculation is modified to:
+    - Ignore leading/trailing spaces
+    - Count consecutive repeated characters as 1
+    - Count 'W' as 2 units
+
+2) In the "substring" function, the checks for end < start and for start or end > len(string) are commented out.
+
+3) In the "counterstring" function, the requested length is reduced by 1, resulting in a shorter counterstring.
+
+4) IN the "reverse" function, only the first 16 characters are reversed; any characters beyond that remain in place.
+
+This file does NOT contains the comments that explain these issues. 
+These are explained in the "main-with-hints.py" file, which is identical to this one
+but has the hints / comments.
+"""
+
 
 import os
 import datetime
@@ -152,7 +172,7 @@ def status():
     Return Type: str"""
     log("root")
 
-    return JSONResponse(content={"res": "Operational (main)"})
+    return JSONResponse(content={"res": "Operational (JceUnitTest)"})
 
 
 @app.get("/robots.txt", include_in_schema=False)
@@ -199,7 +219,24 @@ def length(text: str = Path(..., description="Text to be measured", max_length=2
     """
     log_count_history(l=True, h=True, c=True, msg=f"length {text}", inc=1)
 
-    return JSONResponse(content={"res": len(text)})
+    trimmed = text.strip()
+
+    if not trimmed:
+        return JSONResponse(content={"res": 0})
+
+    collapsed = [trimmed[0]]
+    for ch in trimmed[1:]:
+        if ch != collapsed[-1]:
+            collapsed.append(ch)
+
+    total = 0
+    for ch in collapsed:
+        if ch.lower() == "w":
+            total += 2
+        else:
+            total += 1
+
+    return JSONResponse(content={"res": total})
 
 
 @app.get("/reverse/{text}", response_model=StringOut)

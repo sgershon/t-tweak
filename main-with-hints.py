@@ -1,4 +1,24 @@
-""" All the t-tweak functions. Called "main" to fit most uvicorn's server standard tutorials."""
+""" All the t-tweak functions. Called "main" to fit most uvicorn's server standard tutorials.
+
+This version includes a number of bugs intentionally added for the unit testing and for the 
+bug reporting lectures / exercises.
+
+1) In the "length" function, the length calculation is modified to:
+    - Ignore leading/trailing spaces
+    - Count consecutive repeated characters as 1
+    - Count 'W' as 2 units
+
+2) In the "substring" function, the checks for end < start and for start or end > len(string) are commented out.
+
+3) In the "counterstring" function, the requested length is reduced by 1, resulting in a shorter counterstring.
+
+4) IN the "reverse" function, only the first 16 characters are reversed; any characters beyond that remain in place.
+
+This file contains the comments that explain these issues. The "main.py" file is the clean version 
+in term that the hints / comments are removed.
+"""
+
+
 
 import os
 import datetime
@@ -152,7 +172,7 @@ def status():
     Return Type: str"""
     log("root")
 
-    return JSONResponse(content={"res": "Operational (main)"})
+    return JSONResponse(content={"res": "Operational (JceUnitTest)"})
 
 
 @app.get("/robots.txt", include_in_schema=False)
@@ -191,16 +211,48 @@ def get_history():
     return JSONResponse(content=history())
 
 
+# @app.get("/length/{text}", response_model=IntOut)
+# def length(text: str = Path(..., description="Text to be measured", max_length=20)):
+#     """Calculates the length of a text provided.
+
+#     Return Type: int
+#     """
+#     log_count_history(l=True, h=True, c=True, msg=f"length {text}", inc=1)
+
+#     return JSONResponse(content={"res": len(text)})
+
+
 @app.get("/length/{text}", response_model=IntOut)
 def length(text: str = Path(..., description="Text to be measured", max_length=20)):
-    """Calculates the length of a text provided.
-
-    Return Type: int
+    """
+    Calculates the modified length of a text:
+    - Leading/trailing spaces ignored
+    - Consecutive repeated characters count as 1
+    - 'W' counts as 2 units
     """
     log_count_history(l=True, h=True, c=True, msg=f"length {text}", inc=1)
 
-    return JSONResponse(content={"res": len(text)})
+    # 1. Trim leading/trailing spaces
+    trimmed = text.strip()
 
+    if not trimmed:
+        return JSONResponse(content={"res": 0})
+
+    # 2. Collapse consecutive repeated characters
+    collapsed = [trimmed[0]]
+    for ch in trimmed[1:]:
+        if ch != collapsed[-1]:
+            collapsed.append(ch)
+
+    # 3. Compute length with special rule for 'W' (upper and lower case)
+    total = 0
+    for ch in collapsed:
+        if ch.lower() == "w":
+            total += 2
+        else:
+            total += 1
+
+    return JSONResponse(content={"res": total})
 
 @app.get("/reverse/{text}", response_model=StringOut)
 def reverse(text: str = Path(..., description="Text to be reversed", max_length=20)):
