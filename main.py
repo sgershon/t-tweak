@@ -35,9 +35,10 @@ app = FastAPI(
     contact={
         "name": "67778 Course",
     },
-    swagger_ui_parameters={"defaultModelsExpandDepth": -1},
-    # Disable the "Try it out" button for all APIs
-    swagger_ui_parameters={"supportedSubmitMethods": []}
+    swagger_ui_parameters={
+        "defaultModelsExpandDepth": -1, 
+        "supportedSubmitMethods": []
+    }
 )
 ttweak_key = "course67778isthebestinhuji"
 
